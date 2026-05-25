@@ -10,6 +10,9 @@ import android.content.Context
 import android.content.ComponentName
 import android.content.Intent
 import android.os.Build
+import android.graphics.RenderEffect as AndroidRenderEffect
+import android.graphics.Shader as AndroidShader
+import androidx.compose.ui.graphics.asComposeRenderEffect
 import android.os.Bundle
 import android.os.Trace
 import android.provider.Settings
@@ -912,14 +915,38 @@ class MainActivity : ComponentActivity() {
                             bottomSpacerPx = spacerPx
                         )
 
-                        AppNavigation(
-                            playerViewModel = playerViewModel,
-                            navController = navController,
-                            paddingValues = innerPadding,
-                            userPreferencesRepository = userPreferencesRepository,
-                            onSearchBarActiveChange = { isSearchBarActive = it },
-                            onOpenSidebar = { scope.launch { drawerState.open() } }
-                        )
+                        val expansionFractionProvider = remember(playerViewModel.playerContentExpansionFraction) {
+                            { playerViewModel.playerContentExpansionFraction.value }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .graphicsLayer {
+                                    val fraction = expansionFractionProvider()
+                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                                        val blurPx = fraction * 100f // 40px target blur at 100% expanded
+                                        if (blurPx > 0f) {
+                                            renderEffect = AndroidRenderEffect.createBlurEffect(
+                                                blurPx,
+                                                blurPx,
+                                                AndroidShader.TileMode.CLAMP
+                                            ).asComposeRenderEffect()
+                                        } else {
+                                            renderEffect = null
+                                        }
+                                    }
+                                }
+                        ) {
+                            AppNavigation(
+                                playerViewModel = playerViewModel,
+                                navController = navController,
+                                paddingValues = innerPadding,
+                                userPreferencesRepository = userPreferencesRepository,
+                                onSearchBarActiveChange = { isSearchBarActive = it },
+                                onOpenSidebar = { scope.launch { drawerState.open() } }
+                            )
+                        }
 
                         val isExpandedOrExpanding by remember {
                             derivedStateOf {
@@ -935,7 +962,11 @@ class MainActivity : ComponentActivity() {
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.surfaceContainerLowest.copy(alpha = 0.6f))
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceContainerLowest.copy(
+                                            alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 0.35f else 0.6f
+                                        )
+                                    )
                                     .pointerInput(Unit) {
                                         detectTapGestures {
                                             playerViewModel.collapsePlayerSheet()

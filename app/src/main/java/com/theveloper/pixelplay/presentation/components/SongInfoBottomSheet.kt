@@ -1073,6 +1073,7 @@ private fun ToneTargetOption(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(shape = RoundedCornerShape(4.dp))
             .clickable(onClick = onClick),
         colors = ListItemDefaults.colors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
