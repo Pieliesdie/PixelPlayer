@@ -157,6 +157,31 @@ private fun ImmutableList<Song>.removeSongById(songId: String): ImmutableList<So
     return asPersistentPlaybackQueue().removeAt(index)
 }
 
+private fun ImmutableList<Song>.moveSong(fromIndex: Int, toIndex: Int): ImmutableList<Song> {
+    if (fromIndex == toIndex || fromIndex !in indices || toIndex !in indices) return this
+    val movedSong = this[fromIndex]
+    return asPersistentPlaybackQueue()
+        .removeAt(fromIndex)
+        .add(toIndex, movedSong)
+}
+
+private fun moveQueueIndex(index: Int, fromIndex: Int, toIndex: Int): Int {
+    if (index == C.INDEX_UNSET || fromIndex == toIndex) return index
+    return when {
+        index == fromIndex -> toIndex
+        fromIndex < toIndex && index in (fromIndex + 1)..toIndex -> index - 1
+        toIndex < fromIndex && index in toIndex until fromIndex -> index + 1
+        else -> index
+    }
+}
+
+private data class QueueTimelineSignature(
+    val count: Int,
+    val orderHash: Long,
+    val firstMediaId: String?,
+    val lastMediaId: String?
+)
+
 data class PlaybackAudioMetadata(
     val mediaId: String? = null,
     val mimeType: String? = null,
@@ -2414,11 +2439,35 @@ class PlayerViewModel @Inject constructor(
         mediaController?.let { controller ->
             if (fromIndex >= 0 && fromIndex < controller.mediaItemCount &&
                 toIndex >= 0 && toIndex < controller.mediaItemCount) {
+                val currentIndexBeforeMove = controller.currentMediaItemIndex
+                    .takeIf { it != C.INDEX_UNSET }
+                    ?: playbackStateHolder.stablePlayerState.value.currentMediaItemIndex
+                val updatedCurrentIndex = moveQueueIndex(currentIndexBeforeMove, fromIndex, toIndex)
 
                 // Move the item in the MediaController's timeline.
                 // This is the source of truth for playback.
                 controller.moveMediaItem(fromIndex, toIndex)
 
+                // Optimistically mirror the committed move in UI state. The drag preview stays
+                // local while dragging, so this single state update does not add per-frame work.
+                _playerUiState.update { state ->
+                    val updatedQueue = state.currentPlaybackQueue.moveSong(fromIndex, toIndex)
+                    if (updatedQueue === state.currentPlaybackQueue) {
+                        state
+                    } else {
+                        state.copy(currentPlaybackQueue = updatedQueue)
+                    }
+                }
+
+                playbackStateHolder.updateStablePlayerState { state ->
+                    if (updatedCurrentIndex == C.INDEX_UNSET ||
+                        state.currentMediaItemIndex == updatedCurrentIndex
+                    ) {
+                        state
+                    } else {
+                        state.copy(currentMediaItemIndex = updatedCurrentIndex)
+                    }
+                }
             }
         }
     }
@@ -2562,25 +2611,11 @@ class PlayerViewModel @Inject constructor(
     }
 
     private var lastQueueUpdateRequestId = 0L
-    private var lastQueueSignature: String? = null
+    private var lastQueueSignature: QueueTimelineSignature? = null
     private var lastQueueUpdateJob: Job? = null
 
     private fun updateCurrentPlaybackQueueFromPlayer(playerCtrl: MediaController?) {
         val currentMediaController = playerCtrl ?: mediaController ?: return
-        val count = currentMediaController.mediaItemCount
-
-        // Heuristic: skip if size hasn't changed.
-        // We don't include currentMediaId here because we don't need to rebuild the whole
-        // queue list just because the selection moved. Selection is handled by stablePlayerState.
-        val signature = "$count"
-        if (signature == lastQueueSignature) return
-        lastQueueSignature = signature
-
-        if (count == 0) {
-            _playerUiState.update { it.copy(currentPlaybackQueue = persistentListOf()) }
-            return
-        }
-
         val requestId = ++lastQueueUpdateRequestId
         lastQueueUpdateJob?.cancel()
         lastQueueUpdateJob = viewModelScope.launch {
@@ -2588,14 +2623,46 @@ class PlayerViewModel @Inject constructor(
             delay(100)
             
             val timeline = currentMediaController.currentTimeline
-            val mediaItems = mutableListOf<MediaItem>()
+            val count = timeline.windowCount
+            if (count == 0) {
+                if (requestId != lastQueueUpdateRequestId) return@launch
+                val emptySignature = QueueTimelineSignature(
+                    count = 0,
+                    orderHash = 0L,
+                    firstMediaId = null,
+                    lastMediaId = null
+                )
+                if (lastQueueSignature != emptySignature) {
+                    lastQueueSignature = emptySignature
+                    _playerUiState.update { it.copy(currentPlaybackQueue = persistentListOf()) }
+                }
+                return@launch
+            }
+
+            val mediaItems = ArrayList<MediaItem>(count)
             val window = Timeline.Window()
+            var orderHash = 1125899906842597L
+            var firstMediaId: String? = null
+            var lastMediaId: String? = null
             
-            // Collect MediaItems on Main thread (inside coroutine)
             for (i in 0 until count) {
-                mediaItems.add(timeline.getWindow(i, window).mediaItem)
+                val mediaItem = timeline.getWindow(i, window).mediaItem
+                mediaItems.add(mediaItem)
+                val mediaId = mediaItem.mediaId
+                if (i == 0) firstMediaId = mediaId
+                if (i == count - 1) lastMediaId = mediaId
+                orderHash = (orderHash * 31) + mediaId.hashCode()
                 if (i % 500 == 0) kotlinx.coroutines.yield()
             }
+
+            val signature = QueueTimelineSignature(
+                count = count,
+                orderHash = orderHash,
+                firstMediaId = firstMediaId,
+                lastMediaId = lastMediaId
+            )
+            if (requestId != lastQueueUpdateRequestId) return@launch
+            if (signature == lastQueueSignature) return@launch
 
             val allSongsById = libraryStateHolder.allSongsById.value
             
@@ -2607,6 +2674,7 @@ class PlayerViewModel @Inject constructor(
 
             if (requestId != lastQueueUpdateRequestId) return@launch
 
+            lastQueueSignature = signature
             _playerUiState.update { it.copy(currentPlaybackQueue = queue.toPlaybackQueue()) }
             if (queue.isNotEmpty()) {
                 _isSheetVisible.value = true
