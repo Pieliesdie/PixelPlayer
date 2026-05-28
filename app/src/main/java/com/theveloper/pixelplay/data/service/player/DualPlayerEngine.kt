@@ -511,6 +511,8 @@ class DualPlayerEngine @Inject constructor(
                                 ?.let { resolveCloudUri(it) }
                         }
                     }
+                } catch (e: Exception) {
+                    Timber.tag("DualPlayerEngine").w(e, "Pre-resolution error")
                 }
             }
         }
