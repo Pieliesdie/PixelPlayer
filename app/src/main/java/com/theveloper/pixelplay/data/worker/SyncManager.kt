@@ -20,6 +20,8 @@ import kotlinx.coroutines.launch
 import com.theveloper.pixelplay.data.observer.MediaStoreObserver
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 
 /**
  * Data class representing the progress of the sync operation.
@@ -57,6 +59,7 @@ class SyncManager @Inject constructor(
 ) {
     private val workManager = WorkManager.getInstance(context)
     private val sharingScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var mediaStoreAutoSyncJob: Job? = null
 
     // EXPONE UN FLOW<BOOLEAN> SIMPLE
     val isSyncing: Flow<Boolean> =
@@ -74,7 +77,7 @@ class SyncManager @Inject constructor(
             )
 
     init {
-        // Ensure worker is not cancelled blindly on startup
+        observeExternalMediaStoreChanges()
     }
 
     /**
@@ -192,7 +195,10 @@ class SyncManager @Inject constructor(
     fun incrementalSync() {
         Log.i(TAG, "Incremental sync requested - Scheduling incremental worker")
         enqueueSyncWork(
-            request = SyncWorker.incrementalSyncWork(),
+            request = SyncWorker.incrementalSyncWork(
+                forceFilesystemScan = true,
+                runMaintenance = false
+            ),
             policy = ExistingWorkPolicy.REPLACE
         )
     }
@@ -229,9 +235,32 @@ class SyncManager @Inject constructor(
     fun forceRefresh() {
         Log.i(TAG, "Force refresh requested - Scheduling incremental worker")
         enqueueSyncWork(
-            request = SyncWorker.incrementalSyncWork(),
+            request = SyncWorker.incrementalSyncWork(
+                forceFilesystemScan = true,
+                runMaintenance = false
+            ),
             policy = ExistingWorkPolicy.REPLACE
         )
+    }
+
+    private fun observeExternalMediaStoreChanges() {
+        sharingScope.launch {
+            mediaStoreObserver.externalMediaStoreChanges.collect {
+                mediaStoreAutoSyncJob?.cancel()
+                mediaStoreAutoSyncJob = launch {
+                    delay(MEDIASTORE_CHANGE_DEBOUNCE_MS)
+                    Log.i(TAG, "MediaStore change detected - scheduling local incremental sync")
+                    enqueueSyncWork(
+                        request = SyncWorker.incrementalSyncWork(
+                            forceFilesystemScan = false,
+                            runMaintenance = false
+                        ),
+                        policy = ExistingWorkPolicy.KEEP,
+                        notifyObserver = false
+                    )
+                }
+            }
+        }
     }
 
     private fun enqueueSyncWork(
@@ -253,6 +282,7 @@ class SyncManager @Inject constructor(
     companion object {
         private const val TAG = "SyncManager"
         private const val MIN_SYNC_INTERVAL_MS = 6 * 60 * 60 * 1000L // 6 hours
+        private const val MEDIASTORE_CHANGE_DEBOUNCE_MS = 1_500L
 
         private val CHANGE_PHASES = setOf(
             SyncProgress.SyncPhase.IDLE,

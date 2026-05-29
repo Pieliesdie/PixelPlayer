@@ -65,6 +65,24 @@ enum class SyncMode {
     REBUILD
 }
 
+internal object FilesystemScanPolicy {
+    const val DEFAULT_COOLDOWN_MS: Long = 12L * 60L * 60L * 1000L
+
+    fun shouldRunFilesystemScan(
+        syncMode: SyncMode,
+        forceFilesystemScan: Boolean,
+        lastFilesystemScanTimestamp: Long,
+        now: Long,
+        cooldownMs: Long = DEFAULT_COOLDOWN_MS
+    ): Boolean {
+        if (forceFilesystemScan || syncMode == SyncMode.FULL || syncMode == SyncMode.REBUILD) {
+            return true
+        }
+        return lastFilesystemScanTimestamp > 0L &&
+            now - lastFilesystemScanTimestamp >= cooldownMs
+    }
+}
+
 @HiltWorker
 class SyncWorker
 @AssistedInject
@@ -91,6 +109,9 @@ constructor(
                             inputData.getString(INPUT_SYNC_MODE) ?: SyncMode.INCREMENTAL.name
                     val syncMode = SyncMode.valueOf(syncModeName)
                     val forceMetadata = inputData.getBoolean(INPUT_FORCE_METADATA, false)
+                    val forceFilesystemScan =
+                        inputData.getBoolean(INPUT_FORCE_FILESYSTEM_SCAN, false)
+                    val runMaintenance = inputData.getBoolean(INPUT_RUN_MAINTENANCE, true)
 
                     // Battery / thermal: defer background INCREMENTAL syncs while
                     // music is playing. FULL and REBUILD are skipped from this
@@ -146,23 +167,30 @@ constructor(
                         )
 
                     // --- MEDIA SCAN PHASE ---
-                    // OPT #8: Filesystem walk cooldown.
-                    // triggerMediaScanForNewFiles() calls File.walkTopDown() on the external storage
-                    // root, which can touch thousands of inodes and cause noticeable I/O.
-                    // For INCREMENTAL syncs we skip it if we already ran within the last hour
-                    // (the MediaStore daemon itself picks up new files quickly via inotify).
-                    // FULL and REBUILD always run it unconditionally.
-                    // Media scan for un-indexed files is slow. Run only if forced, or once every 12 hours.
-                    val mediaScanCooldownMs = 12L * 60L * 60L * 1000L // 12 hours
-                    val timeSinceLastScan = System.currentTimeMillis() - lastSyncTimestamp
-                    val forceFilesystemScan = forceMetadata
-                    val shouldRunMediaScan = forceFilesystemScan || 
-                            (lastSyncTimestamp > 0L && timeSinceLastScan >= mediaScanCooldownMs)
+                    // Filesystem reconciliation is the only way to discover audio files Android
+                    // has not indexed in MediaStore yet. Keep it throttled for automatic startup
+                    // syncs, but allow explicit user refresh/rescan actions to run it immediately
+                    // without also forcing expensive deep metadata reads.
+                    val now = System.currentTimeMillis()
+                    val lastFilesystemScanTimestamp =
+                        userPreferencesRepository.getLastFilesystemScanTimestamp()
+                    val shouldRunMediaScan =
+                        FilesystemScanPolicy.shouldRunFilesystemScan(
+                            syncMode = syncMode,
+                            forceFilesystemScan = forceFilesystemScan,
+                            lastFilesystemScanTimestamp = lastFilesystemScanTimestamp,
+                            now = now
+                        )
                     if (shouldRunMediaScan) {
-                        triggerMediaScanForNewFiles(directoryResolver)
+                        try {
+                            triggerMediaScanForNewFiles(directoryResolver)
+                        } finally {
+                            userPreferencesRepository.setLastFilesystemScanTimestamp(now)
+                        }
                     } else {
                         Timber.tag(TAG).d(
-                            "Skipping filesystem walk — forceMetadata=$forceMetadata, lastSyncTimestamp=${lastSyncTimestamp}"
+                            "Skipping filesystem walk - forceFilesystemScan=$forceFilesystemScan, " +
+                                "lastFilesystemScanTimestamp=$lastFilesystemScanTimestamp"
                         )
                     }
 
@@ -318,6 +346,12 @@ constructor(
 
                     // Count total songs for the output
                     val totalSongs = musicDao.getSongCount().first()
+                    if (!runMaintenance) {
+                        Timber.tag(TAG).d("Skipping library maintenance phases for local-only sync.")
+                        return@withContext Result.success(
+                            workDataOf(OUTPUT_TOTAL_SONGS to totalSongs.toLong())
+                        )
+                    }
 
                     // --- LRC SCANNING PHASE ---
                     val autoScanLrc = userPreferencesRepository.autoScanLrcFilesFlow.first()
@@ -1356,6 +1390,8 @@ constructor(
         const val WORK_NAME = "com.theveloper.pixelplay.data.worker.SyncWorker"
         private const val TAG = "SyncWorker"
         const val INPUT_FORCE_METADATA = "input_force_metadata"
+        const val INPUT_FORCE_FILESYSTEM_SCAN = "input_force_filesystem_scan"
+        const val INPUT_RUN_MAINTENANCE = "input_run_maintenance"
         const val INPUT_SYNC_MODE = "input_sync_mode"
         // INCREMENTAL syncs back off this many times while playback is active
         // before running anyway. With WorkManager's exponential backoff
@@ -1389,14 +1425,25 @@ constructor(
                         .setInputData(
                                 workDataOf(
                                         INPUT_FORCE_METADATA to deepScan,
+                                        INPUT_FORCE_FILESYSTEM_SCAN to false,
+                                        INPUT_RUN_MAINTENANCE to true,
                                         INPUT_SYNC_MODE to SyncMode.INCREMENTAL.name
                                 )
                         )
                         .build()
 
-        fun incrementalSyncWork() =
+        fun incrementalSyncWork(
+            forceFilesystemScan: Boolean = false,
+            runMaintenance: Boolean = true
+        ) =
                 OneTimeWorkRequestBuilder<SyncWorker>()
-                        .setInputData(workDataOf(INPUT_SYNC_MODE to SyncMode.INCREMENTAL.name))
+                        .setInputData(
+                                workDataOf(
+                                        INPUT_SYNC_MODE to SyncMode.INCREMENTAL.name,
+                                        INPUT_FORCE_FILESYSTEM_SCAN to forceFilesystemScan,
+                                        INPUT_RUN_MAINTENANCE to runMaintenance
+                                )
+                        )
                         .build()
 
         // Full rescans and rebuilds do heavy bulk writes to Room + the album art cache.
@@ -1408,12 +1455,17 @@ constructor(
                         .setRequiresStorageNotLow(true)
                         .build()
 
-        fun fullSyncWork(deepScan: Boolean = false) =
+        fun fullSyncWork(
+            deepScan: Boolean = false,
+            forceFilesystemScan: Boolean = true
+        ) =
                 OneTimeWorkRequestBuilder<SyncWorker>()
                         .setInputData(
                                 workDataOf(
                                         INPUT_SYNC_MODE to SyncMode.FULL.name,
-                                        INPUT_FORCE_METADATA to deepScan
+                                        INPUT_FORCE_METADATA to deepScan,
+                                        INPUT_FORCE_FILESYSTEM_SCAN to forceFilesystemScan,
+                                        INPUT_RUN_MAINTENANCE to true
                                 )
                         )
                         .setConstraints(heavySyncConstraints)
@@ -1421,7 +1473,13 @@ constructor(
 
         fun rebuildDatabaseWork() =
                 OneTimeWorkRequestBuilder<SyncWorker>()
-                        .setInputData(workDataOf(INPUT_SYNC_MODE to SyncMode.REBUILD.name))
+                        .setInputData(
+                                workDataOf(
+                                        INPUT_SYNC_MODE to SyncMode.REBUILD.name,
+                                        INPUT_FORCE_FILESYSTEM_SCAN to true,
+                                        INPUT_RUN_MAINTENANCE to true
+                                )
+                        )
                         .setConstraints(heavySyncConstraints)
                         .build()
     }

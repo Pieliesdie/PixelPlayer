@@ -28,6 +28,12 @@ class MediaStoreObserver @Inject constructor(
     )
     val mediaStoreChanges: SharedFlow<Unit> = _mediaStoreChanges.asSharedFlow()
 
+    private val _externalMediaStoreChanges = MutableSharedFlow<Unit>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val externalMediaStoreChanges: SharedFlow<Unit> = _externalMediaStoreChanges.asSharedFlow()
+
     @Volatile
     private var isRegistered: Boolean = false
 
@@ -67,6 +73,7 @@ class MediaStoreObserver @Inject constructor(
     override fun onChange(selfChange: Boolean, uri: Uri?) {
         super.onChange(selfChange, uri)
         _mediaStoreChanges.tryEmit(Unit)
+        _externalMediaStoreChanges.tryEmit(Unit)
     }
 
     fun forceRescan() {
