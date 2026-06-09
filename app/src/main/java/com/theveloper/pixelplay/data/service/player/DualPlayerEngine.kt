@@ -34,7 +34,8 @@ import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.mediacodec.MediaCodecSelector
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.extractor.DefaultExtractorsFactory
-import androidx.media3.extractor.mp4.Mp4Extractor
+import androidx.media3.extractor.mp3.Mp3Extractor
+import androidx.media3.extractor.flac.FlacExtractor
 import com.theveloper.pixelplay.data.diagnostics.PerformanceMetrics
 import com.theveloper.pixelplay.data.model.TransitionSettings
 import com.theveloper.pixelplay.data.telegram.TelegramRepository
@@ -96,6 +97,12 @@ internal fun shouldDisableAudioOffloadByDefaultForDevice(
         brandName == "redmi" ||
         brandName == "poco"
     if (isXiaomiFamilyDevice && sdkInt >= 36) return true
+
+    // Google Pixel devices on SDK 37+ (Android 16 QPR / 17 preview) exhibit an audio
+    // offload HAL bug where the Opus position counter jumps ~49 seconds at a time,
+    // causing audible skips and incorrect position restoration on player rebuild.
+    val isGooglePixelDevice = manufacturerName == "google" || brandName == "google"
+    if (isGooglePixelDevice && sdkInt >= 37) return true
 
     val isLavaDevice =
         manufacturerName == "lava" ||
@@ -227,6 +234,9 @@ class DualPlayerEngine @Inject constructor(
         private const val MAX_AUXILIARY_TIMELINE_ITEMS = 200
         private val LOCAL_MEDIA_SCHEMES = setOf("content", "file", "android.resource")
         private val REMOTE_MEDIA_SCHEMES = setOf("http", "https", "telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive")
+        // Subset of REMOTE_MEDIA_SCHEMES: schemes that need proxy resolution.
+        // http/https resolve directly and must NOT enter the resolvedUriCache lookup path.
+        private val CLOUD_PROXY_SCHEMES = setOf("telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive")
     }
 
     data class TransitionTarget(
@@ -494,38 +504,25 @@ class DualPlayerEngine @Inject constructor(
 
             // --- Pre-Resolve Next/Prev Tracks with Debounce to prevent flooding ---
             preResolutionJob?.cancel()
-            // Battery: skip scheduling entirely for local-only neighbours.
-            // Pre-resolution only does meaningful work for cloud schemes (telegram,
-            // netease, qqmusic, navidrome, jellyfin, gdrive). For libraries with
-            // no cloud sources around the current index, the 600 ms delay + Main
-            // dispatch + scope.launch is pure overhead repeated on every track
-            // change. Snapshot the adjacent URIs synchronously so we can early-
-            // return before paying for the coroutine.
-            val currentIndex = playerA.currentMediaItemIndex
-            if (currentIndex != C.INDEX_UNSET) {
-                val adjacentCloudUris = mutableListOf<Uri>()
-                if (currentIndex + 1 < playerA.mediaItemCount) {
-                    playerA.getMediaItemAt(currentIndex + 1).localConfiguration?.uri?.let { uri ->
-                        if (uri.scheme in REMOTE_MEDIA_SCHEMES) adjacentCloudUris.add(uri)
-                    }
-                }
-                if (currentIndex - 1 >= 0) {
-                    playerA.getMediaItemAt(currentIndex - 1).localConfiguration?.uri?.let { uri ->
-                        if (uri.scheme in REMOTE_MEDIA_SCHEMES) adjacentCloudUris.add(uri)
-                    }
-                }
-
-                if (adjacentCloudUris.isNotEmpty()) {
-                    preResolutionJob = scope.launch {
-                        delay(600) // Wait for user to stop skipping/navigating
-                        try {
-                            for (uriToResolve in adjacentCloudUris) {
-                                resolveCloudUri(uriToResolve)
-                            }
-                        } catch (e: Exception) {
-                            Timber.tag("DualPlayerEngine").w(e, "Error during pre-resolution in onMediaItemTransition")
+            preResolutionJob = scope.launch {
+                delay(600) // Wait for user to stop skipping/navigating
+                try {
+                    val currentIndex = playerA.currentMediaItemIndex
+                    if (currentIndex != C.INDEX_UNSET) {
+                        // Resolve each neighbour directly — no intermediate list allocation.
+                        if (currentIndex + 1 < playerA.mediaItemCount) {
+                            playerA.getMediaItemAt(currentIndex + 1).localConfiguration?.uri
+                                ?.takeIf { it.scheme in CLOUD_PROXY_SCHEMES }
+                                ?.let { resolveCloudUri(it) }
+                        }
+                        if (currentIndex - 1 >= 0) {
+                            playerA.getMediaItemAt(currentIndex - 1).localConfiguration?.uri
+                                ?.takeIf { it.scheme in CLOUD_PROXY_SCHEMES }
+                                ?.let { resolveCloudUri(it) }
                         }
                     }
+                } catch (e: Exception) {
+                    Timber.tag("DualPlayerEngine").w(e, "Pre-resolution error")
                 }
             }
         }
@@ -883,9 +880,15 @@ class DualPlayerEngine @Inject constructor(
         cancelAudioOffloadFallback()
 
         val desiredPlayWhenReady = playerA.playWhenReady
-        val positionMs = playerA.currentPosition
+        // Guard against snapshotting a position that landed during a bad early-startup seek
+        // (e.g. an offload stall rebuild firing while the player is at a spurious offset).
+        // Positions under 5s on first playback are more likely noise than intent.
+        val positionMs = if (playerA.currentPosition > 5_000L) playerA.currentPosition else 0L
         val currentIndex = playerA.currentMediaItemIndex.coerceAtLeast(0)
-        val mediaItems = (0 until playerA.mediaItemCount).map { playerA.getMediaItemAt(it) }
+        // Pre-sized ArrayList avoids the IntRange object and the extra copy produced by .map.
+        val mediaItemCount = playerA.mediaItemCount
+        val mediaItems = ArrayList<MediaItem>(mediaItemCount)
+        for (i in 0 until mediaItemCount) mediaItems.add(playerA.getMediaItemAt(i))
         val repeatMode = playerA.repeatMode
         val shuffleMode = playerA.shuffleModeEnabled
         val volume = playerA.volume
@@ -918,6 +921,48 @@ class DualPlayerEngine @Inject constructor(
         onPlayerSwappedListeners.forEach { it(playerA) }
 
         Timber.tag("DualPlayerEngine").d(logMessage)
+    }
+
+    /**
+     * Returns a [DefaultLoadControl] tuned to the device's RAM tier.
+     *
+     * Low-RAM devices ([ActivityManager.isLowRamDevice]) receive halved buffer ceilings
+     * to prevent memory pressure when both players co-exist during a crossfade.
+     * [bufferForPlaybackMs] is set to ExoPlayer's documented default of 2 500 ms on both
+     * tiers — the previous value of 5 000 ms doubled first-audio latency with no benefit.
+     */
+    private fun buildAdaptiveLoadControl(): DefaultLoadControl {
+        val isLowRam = (context.getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager)
+            .isLowRamDevice
+        // setPrioritizeTimeOverSizeThresholds(true): instructs ExoPlayer to use buffered
+        // *duration* (not buffered *bytes*) as the criterion for deciding when to start
+        // playback and when to stop buffering. This is required for correct behaviour with
+        // high-bitrate and lossless formats (FLAC, hi-res ALAC, WAV) where a short byte
+        // window would be exhausted almost immediately, causing repeated rebuffering.
+        // Without this flag ExoPlayer falls back to a default byte threshold that was
+        // designed for typical compressed audio (~128–320 kbps) and will underperform on
+        // files with bitrates above ~1 Mbps.
+        return if (isLowRam) {
+            DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    /* minBufferMs                      */ 15_000,
+                    /* maxBufferMs                      */ 30_000,
+                    /* bufferForPlaybackMs              */  2_500,
+                    /* bufferForPlaybackAfterRebufferMs */  5_000
+                )
+                .setPrioritizeTimeOverSizeThresholds(true)
+                .build()
+        } else {
+            DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    /* minBufferMs                      */ 30_000,
+                    /* maxBufferMs                      */ 60_000,
+                    /* bufferForPlaybackMs              */  2_500,
+                    /* bufferForPlaybackAfterRebufferMs */  5_000
+                )
+                .setPrioritizeTimeOverSizeThresholds(true)
+                .build()
+        }
     }
 
     private fun buildPlayer(): ExoPlayer {
@@ -992,14 +1037,13 @@ class DualPlayerEngine @Inject constructor(
             override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
                 val uri = dataSpec.uri
                 val scheme = uri.scheme
-                if (scheme in REMOTE_MEDIA_SCHEMES) {
+                if (scheme in CLOUD_PROXY_SCHEMES) {
                     val originalUri = uri.toString()
                     val resolved = resolvedUriCache.get(originalUri)
                     if (resolved != null) {
                         return dataSpec.buildUpon().setUri(resolved).build()
                     }
-                    
-                    Timber.tag("DualPlayerEngine").d("resolveDataSpec: Cache MISS for %s - attempting to use original URI", scheme)
+                    Timber.tag("DualPlayerEngine").d("resolveDataSpec: Cache MISS for %s — using original URI", scheme)
                 }
                 return dataSpec
             }
@@ -1008,28 +1052,16 @@ class DualPlayerEngine @Inject constructor(
         val dataSourceFactory = DefaultDataSource.Factory(context)
         val resolvingFactory = ResolvingDataSource.Factory(dataSourceFactory, resolver)
         val extractorsFactory = DefaultExtractorsFactory()
-            .setMp4ExtractorFlags(Mp4Extractor.FLAG_WORKAROUND_IGNORE_EDIT_LISTS)
+            // FLAG_WORKAROUND_IGNORE_EDIT_LISTS intentionally removed: it breaks Opus files
+            // by discarding the edit list that encodes the pre-skip (encoder delay), causing
+            // ExoPlayer to seek ~44-52s into the track on first playback.
+            // FLAG_ENABLE_CONSTANT_BITRATE_SEEKING (not _ALWAYS): fallback-only CBR seeking
+            // so VBR MP3s with proper Xing/VBRI headers still use their seek table and land
+            // on the exact frame instead of jumping ±30 s on a VBR file.
+            .setMp3ExtractorFlags(Mp3Extractor.FLAG_ENABLE_CONSTANT_BITRATE_SEEKING)
+            .setFlacExtractorFlags(FlacExtractor.FLAG_DISABLE_ID3_METADATA)
 
-        // Time-based buffering normalizes start/load behaviour across formats. With
-        // prioritizeTimeOverSizeThresholds=true the loader keys off buffered *duration*
-        // instead of buffered *bytes*, so a 24/96 FLAC (~5-9 Mbps) and a 128 kbps MP3
-        // reach READY after the same seconds buffered rather than the same megabytes —
-        // removing the "some files take longer to start" gap that scaled with bitrate.
-        // bufferForPlayback is lowered from 5s to 2s so high-bitrate/lossless tracks
-        // (which read/decode more data per second) start about as fast as compressed ones,
-        // while bufferForPlaybackAfterRebuffer stays at 5s to keep recovery safe on slow
-        // storage and remote streams. On low-RAM devices the max prefetch window is reduced
-        // (see loadControlBufferProfileFor) to cap peak memory without changing start latency.
-        val bufferProfile = loadControlBufferProfileFor(isLowRamDevice)
-        val loadControl = DefaultLoadControl.Builder()
-            .setBufferDurationsMs(
-                bufferProfile.minBufferMs,
-                bufferProfile.maxBufferMs,
-                bufferProfile.bufferForPlaybackMs,
-                bufferProfile.bufferForPlaybackAfterRebufferMs
-            )
-            .setPrioritizeTimeOverSizeThresholds(true)
-            .build()
+        val loadControl = buildAdaptiveLoadControl()
 
         return ExoPlayer.Builder(context, renderersFactory)
             .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingFactory, extractorsFactory))
@@ -1177,7 +1209,9 @@ class DualPlayerEngine @Inject constructor(
     suspend fun resolveMediaItem(mediaItem: MediaItem): MediaItem {
         val uri = mediaItem.localConfiguration?.uri ?: return mediaItem
         val scheme = uri.scheme
-        if (scheme !in REMOTE_MEDIA_SCHEMES) return mediaItem
+        // Use CLOUD_PROXY_SCHEMES: http/https resolve directly via ExoPlayer and never
+        // reach resolveCloudUri, so checking them wastes an IO dispatch.
+        if (scheme !in CLOUD_PROXY_SCHEMES) return mediaItem
         val resolvedUri = resolveCloudUri(uri)
         return if (resolvedUri == uri) mediaItem else mediaItem.buildUpon().setUri(resolvedUri).build()
     }
@@ -1364,10 +1398,11 @@ class DualPlayerEngine @Inject constructor(
     }
 
     private fun ensureQueueSnapshot(): List<MediaItem> {
-        if (!activePlayerUsesWindowedQueue && queueSnapshot.size != playerA.mediaItemCount) {
-            refreshQueueSnapshotFromMaster(windowStartIndex = 0, usesWindowedQueue = false)
-        }
-        if (queueSnapshot.isEmpty()) {
+        // Single guard: isEmpty() short-circuits the windowed-queue size check, so
+        // refreshQueueSnapshotFromMaster() is called at most once per invocation.
+        if (queueSnapshot.isEmpty() ||
+            (!activePlayerUsesWindowedQueue && queueSnapshot.size != playerA.mediaItemCount)
+        ) {
             refreshQueueSnapshotFromMaster(windowStartIndex = 0, usesWindowedQueue = false)
         }
         return queueSnapshot
@@ -1462,23 +1497,6 @@ class DualPlayerEngine @Inject constructor(
         } ?: false
     }
 
-    private suspend fun awaitPlayerPlaying(player: ExoPlayer, timeoutMs: Long): Boolean {
-        if (player.isPlaying) return true
-        return kotlinx.coroutines.withTimeoutOrNull(timeoutMs) {
-            suspendCancellableCoroutine { cont ->
-                val listener = object : Player.Listener {
-                    override fun onIsPlayingChanged(isPlaying: Boolean) {
-                        if (isPlaying) {
-                            player.removeListener(this)
-                            if (cont.isActive) cont.resume(true)
-                        }
-                    }
-                }
-                player.addListener(listener)
-                cont.invokeOnCancellation { player.removeListener(listener) }
-            }
-        } ?: false
-    }
 
     fun release() {
         transitionJob?.cancel()

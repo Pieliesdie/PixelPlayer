@@ -141,7 +141,7 @@ import com.theveloper.pixelplay.presentation.components.CustomPresetsSheet
 import com.theveloper.pixelplay.presentation.components.ReorderPresetsSheet
 import com.theveloper.pixelplay.presentation.components.SavePresetDialog
 import com.theveloper.pixelplay.presentation.components.RenamePresetDialog
-import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository.EqualizerViewMode
+import com.theveloper.pixelplay.data.preferences.EqualizerViewMode
 import androidx.compose.material.icons.rounded.ViewQuilt
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.navigationBars

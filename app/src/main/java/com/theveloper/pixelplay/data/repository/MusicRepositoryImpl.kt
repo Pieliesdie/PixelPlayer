@@ -688,8 +688,15 @@ class MusicRepositoryImpl @Inject constructor(
                             applyDirectoryFilter = applyDirectoryFilter
                         )
                     } else {
-                        musicDao.getSongsByGenre(
+                        // getSongsByGenreContaining uses a LIKE query so that a song stored as
+                        // "Rock, Pop" is returned when browsing either "Rock" or "Pop".
+                        musicDao.getSongsByGenreContaining(
                             genreName = genreName,
+                            genrePrefix = "$genreName,%",          // "Rock,..." / "Rock, ..."
+                            genreSuffixWithSpace = "%, $genreName", // "..., Rock"
+                            genreSuffix = "%,$genreName",          // "...,Rock"
+                            genreMiddleWithSpace = "%, $genreName,%", // "..., Rock,..."
+                            genreMiddle = "%,$genreName,%",        // "...,Rock,..."
                             allowedParentDirs = allowedParentDirs,
                             applyDirectoryFilter = applyDirectoryFilter
                         )
@@ -877,6 +884,7 @@ class MusicRepositoryImpl @Inject constructor(
                     ) { genreNames, hasUnknown ->
                         val knownGenres = genreNames
                             .asSequence()
+                            .flatMap { raw -> raw.split(",") } // split "Rock, Pop" → ["Rock", "Pop"]
                             .map { it.trim() }
                             .filter { it.isNotBlank() }
                             .map { buildGenre(it) }

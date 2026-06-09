@@ -55,6 +55,7 @@ class MusicRepositoryImplTest {
         // Mockear los flows de preferencias por defecto, pueden ser sobrescritos por test
         coEvery { mockUserPreferencesRepository.allowedDirectoriesFlow } returns flowOf(emptySet())
         coEvery { mockUserPreferencesRepository.blockedDirectoriesFlow } returns flowOf(setOf("/dummy"))
+        every { mockUserPreferencesRepository.mockGenresEnabledFlow } returns flowOf(false)
         coEvery { mockUserPreferencesRepository.initialSetupDoneFlow } returns flowOf(true)
         coEvery { mockUserPreferencesRepository.isFolderFilterActiveFlow } returns flowOf(false)
         // Populate artists
@@ -315,6 +316,35 @@ class MusicRepositoryImplTest {
         assertEquals(2, result.size)
         assertTrue(result.any { it.id == "rock" })
         assertEquals(1, result.count { it.id == "unknown" })
+    }
+
+    @Test
+    fun `getMusicByGenre includes compact comma separated genre matches`() = runTest(testDispatcher) {
+        val matchingSong = createSongEntity(
+            id = 1L,
+            title = "Song A",
+            artistName = "Artist 1",
+            genre = "Rock,Pop",
+            filePath = "/music/songA.mp3",
+            parentDirectoryPath = "/music"
+        )
+        every {
+            mockMusicDao.getSongsByGenreContaining(
+                eq("Pop"),
+                eq("Pop,%"),
+                eq("%, Pop"),
+                eq("%,Pop"),
+                eq("%, Pop,%"),
+                eq("%,Pop,%"),
+                any(),
+                eq(true)
+            )
+        } returns flowOf(listOf(matchingSong))
+
+        val result = musicRepository.getMusicByGenre("Pop").first()
+
+        assertEquals(1, result.size)
+        assertEquals("Song A", result.first().title)
     }
 
     @Nested
