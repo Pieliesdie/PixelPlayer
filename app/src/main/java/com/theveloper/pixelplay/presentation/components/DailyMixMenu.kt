@@ -44,19 +44,19 @@ fun DailyMixMenu(
                 .padding(16.dp)
         ) {
             Text(
-                text = stringResource(R.string.presentation_batch_e_daily_mix_how_title),
+                text = stringResource(R.string.daily_mix_how_title),
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.presentation_batch_e_daily_mix_how_body),
+                text = stringResource(R.string.daily_mix_how_body),
             )
             Spacer(modifier = Modifier.height(16.dp))
             TextField(
                 value = prompt,
                 onValueChange = { prompt = it },
-                label = { Text(stringResource(R.string.presentation_batch_e_daily_mix_prompt_label)) },
+                label = { Text(stringResource(R.string.daily_mix_prompt_label)) },
                 modifier = Modifier.fillMaxWidth(),
-                supportingText = { Text(stringResource(R.string.presentation_batch_e_daily_mix_cost_hint)) }
+                supportingText = { Text(stringResource(R.string.daily_mix_cost_hint)) }
             )
             Spacer(modifier = Modifier.height(16.dp))
             Button(
@@ -68,9 +68,9 @@ fun DailyMixMenu(
             ) {
                 Text(
                     if (isLoading) {
-                        stringResource(R.string.presentation_batch_e_daily_mix_updating)
+                        stringResource(R.string.daily_mix_updating)
                     } else {
-                        stringResource(R.string.presentation_batch_e_daily_mix_update)
+                        stringResource(R.string.daily_mix_update)
                     }
                 )
             }

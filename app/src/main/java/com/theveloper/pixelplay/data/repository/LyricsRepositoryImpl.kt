@@ -1365,7 +1365,7 @@ class LyricsRepositoryImpl @Inject constructor(
                 e is UnknownHostException -> Result.failure(LyricsException(context.getString(R.string.lyrics_network_error), e))
                 e is IOException -> Result.failure(LyricsException(context.getString(R.string.lyrics_network_error), e))
                 e is HttpException -> Result.failure(LyricsException(context.getString(R.string.lyrics_server_error, e.code()), e))
-                else -> Result.failure(LyricsException(context.getString(R.string.failed_to_fetch_lyrics_from_remote), e))
+                else -> Result.failure(LyricsException(context.getString(R.string.lyrics_failed_to_fetch_from_remote), e))
             }
         }
     }
@@ -1445,7 +1445,7 @@ class LyricsRepositoryImpl @Inject constructor(
                 e is UnknownHostException -> Result.failure(LyricsException(context.getString(R.string.lyrics_network_error), e))
                 e is IOException -> Result.failure(LyricsException(context.getString(R.string.lyrics_network_error), e))
                 e is HttpException -> Result.failure(LyricsException(context.getString(R.string.lyrics_server_error, e.code()), e))
-                else -> Result.failure(LyricsException(context.getString(R.string.failed_to_search_for_lyrics), e))
+                else -> Result.failure(LyricsException(context.getString(R.string.lyrics_failed_to_search), e))
             }
         }
     }
@@ -1494,7 +1494,7 @@ class LyricsRepositoryImpl @Inject constructor(
             }
         } catch (e: Exception) {
             LogUtils.e(this@LyricsRepositoryImpl, e, "Manual search failed")
-            Result.failure(LyricsException(context.getString(R.string.failed_to_search_for_lyrics), e)
+            Result.failure(LyricsException(context.getString(R.string.lyrics_failed_to_search), e)
             )
         }
     }
