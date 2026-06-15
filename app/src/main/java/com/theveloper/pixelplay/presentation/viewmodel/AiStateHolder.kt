@@ -288,23 +288,24 @@ class AiStateHolder @Inject constructor(
         return try {
             val targetLanguage = context.resources.configuration.locales[0].displayLanguage
             val prompt = """
-Translate the provided song lyrics into $targetLanguage.
+<task>Translate song lyrics into $targetLanguage.</task>
 
-Keep every timestamp exactly unchanged.
+<rules>
+- Preserve ALL timestamps [mm:ss.xx] exactly — never modify, merge, or drop them.
+- Output TWO lines per original line: the original, then the translation with the same timestamp.
+- NEVER add explanations, labels, numbering, section headers, or formatting.
+- NEVER remove, merge, split, or reorder lines.
+- If lyrics are ALREADY mostly in $targetLanguage, output ONLY: ALREADY_IN_TARGET_LANGUAGE
+</rules>
 
-If the lyrics are ALREADY mostly in $targetLanguage, output ONLY the exact phrase "ALREADY_IN_TARGET_LANGUAGE" without any other text.
+<format>
+[original timestamp] original text
+[same timestamp] translated text
+</format>
 
-For each original line, output the original line first, then on the next line output the $targetLanguage translation with the same timestamp.
-
-Do not add any extra text, explanations, numbering, labels, or formatting.
-Do not remove, merge, split, or reorder lines.
-
-Output only:
-[timestamp] original text
-[timestamp] translated text
-
-Lyrics to translate:
+<lyrics>
 $lyricsText
+</lyrics>
             """.trimIndent()
             
             val response = aiHandler.generateContent(
