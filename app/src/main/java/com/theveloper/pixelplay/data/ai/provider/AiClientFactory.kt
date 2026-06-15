@@ -70,6 +70,17 @@ class AiClientFactory @Inject constructor() {
                 defaultModelId = "google/gemini-2.0-flash-lite-preview-02-05:free",
                 providerName = "OpenRouter"
             )
+            AiProvider.CUSTOM -> GenericOpenAiClient(
+                apiKey = apiKey,
+                baseUrl = "",
+                defaultModelId = "",
+                providerName = "Custom Provider"
+            )
         }
+    }
+
+    fun createClientWithUrl(provider: AiProvider, apiKey: String, baseUrl: String): AiClient {
+        val displayName = provider.displayName
+        return GenericOpenAiClient(apiKey, baseUrl.trimEnd('/'), "", displayName)
     }
 }
