@@ -4,6 +4,8 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -35,6 +37,15 @@ class AiPreferencesRepository @Inject constructor(
     private object Keys {
         val AI_PROVIDER = stringPreferencesKey("ai_provider")
         val SAFE_TOKEN_LIMIT = booleanPreferencesKey("safe_token_limit")
+        val AI_TEMPERATURE = floatPreferencesKey("ai_temperature")
+        val AI_TOP_P = floatPreferencesKey("ai_top_p")
+        val AI_TOP_K = intPreferencesKey("ai_top_k")
+        val AI_MAX_TOKENS = intPreferencesKey("ai_max_tokens")
+        val AI_PRESENCE_PENALTY = floatPreferencesKey("ai_presence_penalty")
+        val AI_FREQUENCY_PENALTY = floatPreferencesKey("ai_frequency_penalty")
+        val AI_SAMPLE_SIZE = intPreferencesKey("ai_sample_size")
+        val AI_DIGEST_MODE = stringPreferencesKey("ai_digest_mode")
+        val AI_INCLUDE_EXTENDED_FIELDS = booleanPreferencesKey("ai_include_extended_fields")
 
         fun getApiKey(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_api_key")
         fun getModel(provider: AiProvider) = stringPreferencesKey("${provider.name.lowercase()}_model")
@@ -131,11 +142,74 @@ class AiPreferencesRepository @Inject constructor(
     val isSafeTokenLimitEnabled: Flow<Boolean> =
         dataStore.data.map { preferences -> preferences[Keys.SAFE_TOKEN_LIMIT] ?: true }
 
+    val aiTemperature: Flow<Float> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_TEMPERATURE] ?: 0.7f }
+
+    val aiTopP: Flow<Float> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_TOP_P] ?: 0.95f }
+
+    val aiTopK: Flow<Int> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_TOP_K] ?: 64 }
+
+    val aiMaxTokens: Flow<Int> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_MAX_TOKENS] ?: 4096 }
+
+    val aiPresencePenalty: Flow<Float> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_PRESENCE_PENALTY] ?: 0.0f }
+
+    val aiFrequencyPenalty: Flow<Float> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_FREQUENCY_PENALTY] ?: 0.0f }
+
+    val aiSampleSize: Flow<Int> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_SAMPLE_SIZE] ?: 40 }
+
+    val aiDigestMode: Flow<String> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_DIGEST_MODE] ?: "safe" }
+
+    val aiIncludeExtendedFields: Flow<Boolean> =
+        dataStore.data.map { preferences -> preferences[Keys.AI_INCLUDE_EXTENDED_FIELDS] ?: false }
+
     suspend fun setAiProvider(provider: String) {
         dataStore.edit { preferences -> preferences[Keys.AI_PROVIDER] = provider }
     }
 
     suspend fun setSafeTokenLimitEnabled(enabled: Boolean) {
         dataStore.edit { preferences -> preferences[Keys.SAFE_TOKEN_LIMIT] = enabled }
+    }
+
+    suspend fun setAiTemperature(value: Float) {
+        dataStore.edit { preferences -> preferences[Keys.AI_TEMPERATURE] = value }
+    }
+
+    suspend fun setAiTopP(value: Float) {
+        dataStore.edit { preferences -> preferences[Keys.AI_TOP_P] = value }
+    }
+
+    suspend fun setAiTopK(value: Int) {
+        dataStore.edit { preferences -> preferences[Keys.AI_TOP_K] = value }
+    }
+
+    suspend fun setAiMaxTokens(value: Int) {
+        dataStore.edit { preferences -> preferences[Keys.AI_MAX_TOKENS] = value }
+    }
+
+    suspend fun setAiPresencePenalty(value: Float) {
+        dataStore.edit { preferences -> preferences[Keys.AI_PRESENCE_PENALTY] = value }
+    }
+
+    suspend fun setAiFrequencyPenalty(value: Float) {
+        dataStore.edit { preferences -> preferences[Keys.AI_FREQUENCY_PENALTY] = value }
+    }
+
+    suspend fun setAiSampleSize(value: Int) {
+        dataStore.edit { preferences -> preferences[Keys.AI_SAMPLE_SIZE] = value }
+    }
+
+    suspend fun setAiDigestMode(mode: String) {
+        dataStore.edit { preferences -> preferences[Keys.AI_DIGEST_MODE] = mode }
+    }
+
+    suspend fun setAiIncludeExtendedFields(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[Keys.AI_INCLUDE_EXTENDED_FIELDS] = enabled }
     }
 }
