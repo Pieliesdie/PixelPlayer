@@ -20,9 +20,6 @@ class AiMetadataGenerator @Inject constructor(
     private val aiHandler: AiHandler,
     private val json: Json
 ) {
-    private fun cleanJson(jsonString: String): String {
-        return jsonString.replace("```json", "").replace("```", "").trim()
-    }
 
     suspend fun generate(
         song: Song,
@@ -52,7 +49,7 @@ class AiMetadataGenerator @Inject constructor(
             }
 
             Timber.d("AI Response: $responseText")
-            val cleanedJson = cleanJson(responseText)
+            val cleanedJson = AiResponseCleaner.cleanJsonResponse(responseText)
             val metadata = json.decodeFromString<SongMetadata>(cleanedJson)
 
             Result.success(metadata)

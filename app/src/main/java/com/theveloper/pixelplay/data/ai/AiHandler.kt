@@ -69,6 +69,11 @@ class AiHandler @Inject constructor(
         val frequencyPenalty: Float,
     )
 
+    private data class GenerationResult(
+        val response: String,
+        val modelUsed: String,
+    )
+
     private suspend fun getGenerationParams(): GenerationParams {
         return GenerationParams(
             temperature = preferencesRepo.aiTemperature.first(),
@@ -91,60 +96,43 @@ class AiHandler @Inject constructor(
         maxTokens: Int,
         presencePenalty: Float,
         frequencyPenalty: Float,
-    ): String {
+    ): GenerationResult {
         val client = clientFactory.createClient(provider, apiKey)
         val requestedModel = getModel(provider).ifBlank { client.getDefaultModel() }
 
-        return try {
-            withTimeout(REQUEST_TIMEOUT_MS) {
-                client.generateContent(
-                    requestedModel,
-                    systemPrompt,
-                    prompt,
-                    temperature,
-                    topP,
-                    topK,
-                    maxTokens,
-                    presencePenalty,
-                    frequencyPenalty,
+        fun callWithModel(model: String): String {
+            return try {
+                withTimeout(REQUEST_TIMEOUT_MS) {
+                    client.generateContent(
+                        model, systemPrompt, prompt, temperature,
+                        topP, topK, maxTokens, presencePenalty, frequencyPenalty,
+                    )
+                }
+            } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
+                throw com.theveloper.pixelplay.data.ai.provider.AiProviderSupport.createException(
+                    providerName = provider.displayName,
+                    statusCode = null,
+                    transportMessage = "Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. The model may be overloaded.",
+                    responseBody = null,
+                    requestedModel = model
                 )
             }
-        } catch (e: kotlinx.coroutines.TimeoutCancellationException) {
-            throw com.theveloper.pixelplay.data.ai.provider.AiProviderSupport.createException(
-                providerName = provider.displayName,
-                statusCode = null,
-                transportMessage = "Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s. The model may be overloaded.",
-                responseBody = null,
-                requestedModel = requestedModel
-            )
+        }
+
+        return try {
+            val response = callWithModel(requestedModel)
+            GenerationResult(response, requestedModel)
         } catch (e: Exception) {
             val failure = com.theveloper.pixelplay.data.ai.provider.AiProviderSupport.wrapThrowable(
-                provider.displayName,
-                e,
-                requestedModel
+                provider.displayName, e, requestedModel
             )
 
             val recoveredModel = recoverModelIfNeeded(
-                provider = provider,
-                apiKey = apiKey,
-                requestedModel = requestedModel,
-                client = client,
-                failure = failure
+                provider, apiKey, requestedModel, client, failure
             ) ?: throw failure
 
-            withTimeout(REQUEST_TIMEOUT_MS) {
-                client.generateContent(
-                    recoveredModel,
-                    systemPrompt,
-                    prompt,
-                    temperature,
-                    topP,
-                    topK,
-                    maxTokens,
-                    presencePenalty,
-                    frequencyPenalty,
-                )
-            }
+            val response = callWithModel(recoveredModel)
+            GenerationResult(response, recoveredModel)
         }
     }
 
@@ -224,7 +212,7 @@ class AiHandler @Inject constructor(
                 val providerPersona = getBasePersona(provider)
                 val finalSystemPrompt = promptEngine.buildPrompt(providerPersona, type, context)
 
-                val response = generateWithRecovery(
+                val result = generateWithRecovery(
                     provider = provider,
                     apiKey = apiKey,
                     systemPrompt = finalSystemPrompt,
@@ -237,17 +225,14 @@ class AiHandler @Inject constructor(
                     frequencyPenalty = params.frequencyPenalty,
                 )
 
-                // Validate response is not empty
-                if (response.isBlank()) {
+                if (result.response.isBlank()) {
                     failedProviders.add("${provider.name}: returned empty response")
                     continue
                 }
 
-                // Low-maintenance usage tracking using highly accurate proportional estimation bounds (4 chars ~ 1 token)
-                // Models with "thinking" or "reasoning" generally output 2-3x internal tokens for complex generation
                 val isThinkingModel = finalSystemPrompt.contains("think", true) || provider.name.contains("reasoning", true)
                 val estimatedPromptTokens = (finalSystemPrompt.length + prompt.length) / 4
-                val estimatedOutputTokens = response.length / 4
+                val estimatedOutputTokens = result.response.length / 4
                 val estimatedThoughtTokens = if (isThinkingModel) (estimatedOutputTokens * 1.5).toInt() else 0
 
                 appScope.launch {
@@ -256,7 +241,7 @@ class AiHandler @Inject constructor(
                             AiUsageEntity(
                                 timestamp = now,
                                 provider = provider.displayName,
-                                model = provider.name,
+                                model = result.modelUsed,
                                 promptType = type.name,
                                 promptTokens = estimatedPromptTokens,
                                 outputTokens = estimatedOutputTokens,
@@ -268,8 +253,8 @@ class AiHandler @Inject constructor(
                     }
                 }
 
-                cacheDao.insert(AiCacheEntity(promptHash = hash, responseJson = response, timestamp = System.currentTimeMillis()))
-                return response
+                cacheDao.insert(AiCacheEntity(promptHash = hash, responseJson = result.response, timestamp = System.currentTimeMillis()))
+                return result.response
             } catch (e: Exception) {
                 // AI Optimization: Robust failover logic—if one provider fails, we log and try the next in the chain
                 val failure = com.theveloper.pixelplay.data.ai.provider.AiProviderSupport.wrapThrowable(provider.displayName, e)

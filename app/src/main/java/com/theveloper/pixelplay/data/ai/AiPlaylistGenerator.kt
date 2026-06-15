@@ -44,8 +44,7 @@ class AiPlaylistGenerator @Inject constructor(
             val prefSampleSize = preferencesRepo.aiSampleSize.first()
             val useExtendedFields = preferencesRepo.aiIncludeExtendedFields.first()
             val sampleCap = if (isSafe) prefSampleSize else prefSampleSize * 2
-            val sampleSize = max(minLength, sampleCap).coerceAtMost(sampleCap)
-            val songSample = samplingPool.take(sampleSize)
+            val songSample = samplingPool.take(sampleCap)
 
             val availableSongsJson = buildString {
                 songSample.forEachIndexed { index, song ->
@@ -155,55 +154,18 @@ class AiPlaylistGenerator @Inject constructor(
     }
 
     private fun extractPlaylistSongIds(rawResponse: String): List<String> {
-        val sanitized = rawResponse
-            .replace("```json", "")
-            .replace("```", "")
-            .trim()
+        val cleaned = AiResponseCleaner.cleanJsonResponse(rawResponse)
+        val jsonArray = AiResponseCleaner.extractJsonArray(cleaned)
+            ?: throw IllegalArgumentException(
+                "AI returned an invalid response format. Expected a JSON array of song IDs but got something else. " +
+                "This usually happens with smaller models. Try selecting a more capable model in AI Settings."
+            )
 
-        for (startIndex in sanitized.indices) {
-            if (sanitized[startIndex] != '[') continue
-
-            var depth = 0
-            var inString = false
-            var isEscaped = false
-
-            for (index in startIndex until sanitized.length) {
-                val character = sanitized[index]
-
-                if (inString) {
-                    if (isEscaped) {
-                        isEscaped = false
-                        continue
-                    }
-
-                    when (character) {
-                        '\\' -> isEscaped = true
-                        '"' -> inString = false
-                    }
-                    continue
-                }
-
-                when (character) {
-                    '"' -> inString = true
-                    '[' -> depth++
-                    ']' -> {
-                        depth--
-                        if (depth == 0) {
-                            val candidate = sanitized.substring(startIndex, index + 1)
-                            val decoded = runCatching { json.decodeFromString<List<String>>(candidate) }
-                            if (decoded.isSuccess) {
-                                return decoded.getOrThrow()
-                            }
-                            break
-                        }
-                    }
-                }
+        return runCatching { json.decodeFromString<List<String>>(jsonArray) }
+            .getOrElse {
+                throw IllegalArgumentException(
+                    "AI returned malformed JSON. Expected a string array but got: ${jsonArray.take(100)}"
+                )
             }
-        }
-
-        throw IllegalArgumentException(
-            "AI returned an invalid response format. Expected a JSON array of song IDs but got something else. " +
-            "This usually happens with smaller models. Try selecting a more capable model in AI Settings."
-        )
     }
 }
