@@ -466,7 +466,7 @@ fun AiPlaylistSheet(
                             strokeWidth = 2.5.dp,
                             color = colors.onPrimaryContainer
                         )
-                        Spacer(modifier = Modifier.width(10.dp))
+                        Spacer(modifier = Modifier.width(15.dp))
                         Text(
                             text = status ?: stringResource(R.string.ai_playlist_generating),
                             style = MaterialTheme.typography.titleMedium,
