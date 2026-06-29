@@ -460,12 +460,13 @@ fun AiPlaylistSheet(
                             color = colors.onTertiaryContainer
                         )
                     } else if (isGenerating) {
+                        Spacer(modifier = Modifier.width(15.dp))
                         CircularProgressIndicator(
                             modifier = Modifier.size(22.dp),
                             strokeWidth = 2.5.dp,
                             color = colors.onPrimaryContainer
                         )
-                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.width(10.dp))
                         Text(
                             text = status ?: stringResource(R.string.ai_playlist_generating),
                             style = MaterialTheme.typography.titleMedium,

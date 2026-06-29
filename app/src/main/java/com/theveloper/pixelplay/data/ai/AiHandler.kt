@@ -97,7 +97,12 @@ class AiHandler @Inject constructor(
         presencePenalty: Float,
         frequencyPenalty: Float,
     ): GenerationResult {
-        val client = clientFactory.createClient(provider, apiKey)
+        val client = if (provider == AiProvider.CUSTOM) {
+            val customBaseUrl = preferencesRepo.getBaseUrl(provider).first()
+            clientFactory.createClientWithUrl(provider, apiKey, customBaseUrl)
+        } else {
+            clientFactory.createClient(provider, apiKey)
+        }
         val requestedModel = getModel(provider).ifBlank { client.getDefaultModel() }
 
         suspend fun callWithModel(model: String): String {
