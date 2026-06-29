@@ -1377,8 +1377,8 @@ private fun Row2Actions(
         label = "NextPressFraction"
     )
 
-    val weightQueue = (0.6f + 0.08f * pressFractionQueue - 0.08f * pressFractionNext).coerceAtLeast(0.1f)
-    val weightNext = (0.4f + 0.08f * pressFractionNext - 0.08f * pressFractionQueue).coerceAtLeast(0.1f)
+    val weightQueue = (0.5f + 0.08f * pressFractionQueue - 0.08f * pressFractionNext).coerceAtLeast(0.1f)
+    val weightNext = (0.5f + 0.08f * pressFractionNext - 0.08f * pressFractionQueue).coerceAtLeast(0.1f)
 
     Row(
         modifier = Modifier
