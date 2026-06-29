@@ -1101,15 +1101,24 @@ class DualPlayerEngine @Inject constructor(
             override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
                 val uri = dataSpec.uri
                 val scheme = uri.scheme
-                if (scheme in CLOUD_PROXY_SCHEMES) {
-                    val originalUri = uri.toString()
-                    val resolved = resolvedUriCache.get(originalUri)
-                    if (resolved != null) {
-                        return dataSpec.buildUpon().setUri(resolved).build()
-                    }
-                    Timber.tag("DualPlayerEngine").d("resolveDataSpec: Cache MISS for %s — using original URI", scheme)
+                if (scheme !in CLOUD_PROXY_SCHEMES) return dataSpec
+
+                val originalUri = uri.toString()
+                resolvedUriCache.get(originalUri)?.let {
+                    return dataSpec.buildUpon().setUri(it).build()
                 }
-                return dataSpec
+
+                // Cache miss: resolve synchronously on the load thread (off-main).
+                // This is the authoritative gate — a custom-scheme URI must never
+                // reach DefaultHttpDataSource, which would throw
+                // MalformedURLException: unknown protocol: <scheme>.
+                val resolved = kotlinx.coroutines.runBlocking { resolveCloudUri(uri) }
+                if (resolved == uri) {
+                    // resolveCloudUri fell back to the raw URI -> proxy not ready / no stream URL.
+                    // Fail closed with a clear cause instead of crashing in HttpDataSource.
+                    throw java.io.IOException("Unable to resolve $scheme stream URI: $originalUri")
+                }
+                return dataSpec.buildUpon().setUri(resolved).build()
             }
         }
 
