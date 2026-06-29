@@ -131,6 +131,7 @@
     </string-array>
     <string-array name="changelog_075_whats_new">
         <item>Google Drive integration with player lifecycle management.</item>
+        <item>Yandex Music integration.</item>
         <item>Batch song metadata editing (tags and cover art).</item>
         <item>AI lyrics translation with customizable Wear OS preferences.</item>
         <item>Lag diagnostic tool and multi-selection on Search screen.</item>

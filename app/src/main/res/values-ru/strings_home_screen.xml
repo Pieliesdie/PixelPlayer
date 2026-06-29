@@ -118,7 +118,7 @@
         <item quantity="many">%1$d песен • %2$s</item>
         <item quantity="other">%1$d песни • %2$s</item>
     </plurals>
-    <string name="daily_mix_action_play_it">Воспроизвести</string>
+    <string name="daily_mix_action_play_it">Играть</string>
     <string name="daily_mix_cd_ai_playlist_generator">Генератор плейлистов ИИ</string>
 
     <!-- DailyMixMenu -->
@@ -150,7 +150,7 @@
 
     <!-- RecentlyPlayedScreen -->
     <string name="recently_played_title">Недавно прослушанные</string>
-    <string name="recently_played_action_play_latest">Воспроизвести последнее</string>
+    <string name="recently_played_action_play_latest">Играть последнее</string>
     <string name="recently_played_empty_title">Нет недавних прослушиваний за %1$s</string>
     <string name="recently_played_empty_subtitle">Измените период или прослушайте больше песен, чтобы заполнить эту временную шкалу.</string>
     <string name="recently_played_queue_name">Недавно прослушанные</string>
@@ -187,7 +187,7 @@
     <string name="stats_timeline_support_year">Ежемесячные столбцы показывают сезонность в течение года.</string>
     <string name="stats_timeline_support_all">Годовые столбцы суммируют всю историю прослушивания.</string>
     <string name="stats_empty_no_timeline_title">Пока нет данных о прослушивании</string>
-    <string name="stats_empty_no_timeline_subtitle">Нажмите «Воспроизвести», чтобы начать формировать историю прослушивания</string>
+    <string name="stats_empty_no_timeline_subtitle">Нажмите «Играть», чтобы начать формировать историю прослушивания</string>
     <string name="stats_rhythm_daily">Ежедневный ритм</string>
     <string name="stats_rhythm_weekly">Недельный ритм</string>
     <string name="stats_rhythm_monthly">Месячный ритм</string>

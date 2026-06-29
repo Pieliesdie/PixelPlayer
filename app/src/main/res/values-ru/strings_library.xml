@@ -124,10 +124,10 @@
 
     <!-- SongInfoBottomSheet, MultiSelectionBottomSheet, PlaylistMultiSelectionBottomSheet -->
     <string name="song_info_cd_edit_metadata">Редактировать теги трека</string>
-    <string name="song_info_action_play">Воспроизвести</string>
-    <string name="song_info_cd_play">Воспроизвести трек</string>
-    <string name="song_info_action_play_all">Воспроизвести всё</string>
-    <string name="song_info_cd_play_all">Воспроизвести всё</string>
+    <string name="song_info_action_play">Играть</string>
+    <string name="song_info_cd_play">Играть трек</string>
+    <string name="song_info_action_play_all">Играть всё</string>
+    <string name="song_info_cd_play_all">Играть всё</string>
     <string name="song_info_cd_add_to_favorites">Добавить в избранное</string>
     <string name="song_info_cd_add_to_favorites_all">Добавить всё в избранное</string>
     <string name="song_info_cd_remove_from_favorites">Удалить из избранного</string>
@@ -136,10 +136,10 @@
     <string name="song_info_cd_share_song_file">Поделиться аудиофайлом</string>
     <string name="song_info_cd_share_all_as_zip">Поделиться всем как ZIP</string>
     <string name="song_info_error_share_song">Не удалось поделиться треком: %1$s</string>
-    <string name="song_info_action_add_to_queue">Добавить в очередь</string>
-    <string name="song_info_cd_add_to_queue">Добавить в очередь</string>
+    <string name="song_info_action_add_to_queue">В очередь</string>
+    <string name="song_info_cd_add_to_queue">В очередь</string>
     <string name="song_info_action_queue_next">Следующий</string>
-    <string name="song_info_cd_queue_next">Воспроизвести следующим</string>
+    <string name="song_info_cd_queue_next">Играть следующим</string>
     <string name="song_info_cd_add_to_playlist">Добавить в плейлист</string>
     <string name="song_info_action_delete">Удалить</string>
     <string name="song_info_action_delete_all">Удалить всё</string>

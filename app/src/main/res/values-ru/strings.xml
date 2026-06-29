@@ -106,7 +106,7 @@
     <string name="common_close">Закрыть</string>
     <string name="common_add">Добавить</string>
     <string name="common_remove">Удалить</string>
-    <string name="common_play">Воспроизвести</string>
+    <string name="common_play">Играть</string>
     <string name="common_previous_track">Предыдущий трек</string>
     <string name="common_next_track">Следующий трек</string>
     <string name="common_favorite">Избранное</string>
@@ -122,7 +122,7 @@
     <string name="common_export_all">Экспортировать всё</string>
     <string name="common_merge_all">Объединить всё</string>
     <string name="common_share_all">Поделиться всем</string>
-    <string name="common_play_album">Воспроизвести альбом</string>
+    <string name="common_play_album">Играть альбом</string>
     <string name="common_shuffle_play_album">Перемешать альбом</string>
     <string name="common_album_art_for_title">Обложка альбома: %1$s</string>
 </resources>

@@ -126,13 +126,13 @@ private data class Contributor(
 )
 
 private val CoreMaintainer = Contributor(
-    id = "theovilardo",
-    displayName = "Theo Vilardo",
+    id = "pieliesdie",
+    displayName = "pieliesdie",
     role = "Creator and maintainer",
     detail = "Building PixelPlayer with direct community feedback.",
-    avatarUrl = "https://avatars.githubusercontent.com/u/26845343?v=4",
+    avatarUrl = "https://avatars.githubusercontent.com/u/43798400?v=4",
     iconRes = R.drawable.round_developer_board_24,
-    githubUrl = "https://github.com/theovilardo",
+    githubUrl = "https://github.com/Pieliesdie/PixelPlayer",
 )
 
 private val PinnedCommunityMembers = listOf(
@@ -593,7 +593,7 @@ private fun AboutHeroCard(
                         subtitle = stringResource(R.string.about_github_subtitle),
                         iconRes = R.drawable.github,
                         contentDescription = stringResource(R.string.about_cd_open_github_repo),
-                        onClick = { openUrl(context, "https://github.com/theovilardo/PixelPlayer") },
+                        onClick = { openUrl(context, "https://github.com/Pieliesdie/PixelPlayer") },
                         modifier = Modifier.weight(1f),
                     )
                     SocialChip(

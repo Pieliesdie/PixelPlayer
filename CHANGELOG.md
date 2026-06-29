@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Google Drive:** Added Google Drive support and improved player lifecycle management.
+- **Yandex music:** Added Yandex music support.
 - **AI Lyrics:** Integrated AI lyrics translation logic in `LyricsStateHolder` and user preferences.
 - **Gemma:** Deleted old Gemini model IDs and integrated Gemma model support.
 - **Wear OS:** Added wear lyrics translation/romanization preferences and album art background.

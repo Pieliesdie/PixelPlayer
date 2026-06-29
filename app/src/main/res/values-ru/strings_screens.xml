@@ -91,7 +91,7 @@
     <string name="no_genres_available">Жанры недоступны.</string>
 
     <!-- ArtistDetailScreen -->
-    <string name="artist_cd_play_title">Воспроизвести %1$s</string>
+    <string name="artist_cd_play_title">Играть %1$s</string>
     <string name="artist_cd_collapse_title">Свернуть %1$s</string>
     <string name="artist_cd_expand_title">Развернуть %1$s</string>
     <string name="artist_cd_edit_image">Изменить изображение исполнителя</string>
@@ -119,7 +119,7 @@
     <string name="playlist_action_set_default_transition">Установить переход по умолчанию</string>
     <string name="playlist_action_export_playlist">Экспортировать плейлист</string>
     <string name="playlist_song_duration_line">%1$s • %2$s</string>
-    <string name="playlist_action_play_it">Воспроизвести</string>
+    <string name="playlist_action_play_it">Играть</string>
     <string name="playlist_action_add_songs">Добавить</string>
     <string name="playlist_cd_add_songs">Добавить треки</string>
     <string name="playlist_action_remove_songs">Удалить</string>
