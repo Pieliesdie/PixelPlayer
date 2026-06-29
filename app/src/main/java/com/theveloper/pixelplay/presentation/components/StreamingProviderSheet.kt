@@ -49,6 +49,8 @@ fun StreamingProviderSheet(
     onNavigateToNavidromeDashboard: () -> Unit = {},
     isJellyfinLoggedIn: Boolean = false,
     onNavigateToJellyfinDashboard: () -> Unit = {},
+    isYandexLoggedIn: Boolean = false,
+    onNavigateToYandexDashboard: () -> Unit = {},
     sheetState: SheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true
     )
@@ -161,6 +163,24 @@ fun StreamingProviderSheet(
                     )
 
                     ProviderRow(
+                        iconPainter = painterResource(R.drawable.yandex_music),
+                        iconTint = Color(0xFFFFCC00), // Yandex yellow
+                        title = "Yandex Music",
+                        subtitle = if (isYandexLoggedIn) "Connected" else "Sign in to stream",
+                        shape = providerSegmentItemShape,
+                        isConnected = isYandexLoggedIn,
+                        useImage = true,
+                        onClick = {
+                            if (!isYandexLoggedIn) {
+                                context.startActivity(Intent(context, com.theveloper.pixelplay.presentation.yandexmusic.auth.YandexLoginActivity::class.java))
+                            } else {
+                                onNavigateToYandexDashboard()
+                            }
+                            onDismissRequest()
+                        }
+                    )
+
+                    ProviderRow(
                         iconPainter = painterResource(R.drawable.netease_cloud_music_logo_icon_206716__1_),
                         iconTint = Color(0xFFE85959),
                         title = "Netease Music",
@@ -208,6 +228,7 @@ private fun ProviderRow(
     shape: RoundedCornerShape,
     isConnected: Boolean = false,
     enabled: Boolean = true,
+    useImage: Boolean = false,
     onClick: () -> Unit
 ) {
     val containerColor = when {
@@ -277,12 +298,20 @@ private fun ProviderRow(
                         .background(iconTint.copy(alpha = if (enabled) 0.14f else 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        painter = iconPainter,
-                        contentDescription = null,
-                        modifier = Modifier.size(22.dp),
-                        tint = iconTint
-                    )
+                    if (useImage) {
+                        androidx.compose.foundation.Image(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    } else {
+                        Icon(
+                            painter = iconPainter,
+                            contentDescription = null,
+                            modifier = Modifier.size(22.dp),
+                            tint = iconTint
+                        )
+                    }
                 }
             },
             trailingContent = {

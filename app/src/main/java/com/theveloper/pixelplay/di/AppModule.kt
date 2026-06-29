@@ -8,6 +8,8 @@ import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import retrofit2.converter.kotlinx.serialization.asConverterFactory
+import okhttp3.MediaType.Companion.toMediaType
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -36,6 +38,10 @@ import com.theveloper.pixelplay.data.media.SongMetadataEditor
 import com.theveloper.pixelplay.data.network.deezer.DeezerApiService
 import com.theveloper.pixelplay.data.network.netease.NeteaseApiService
 import com.theveloper.pixelplay.data.network.lyrics.LrcLibApiService
+import com.theveloper.pixelplay.data.network.yandexmusic.YandexAuthApiService
+import com.theveloper.pixelplay.data.network.yandexmusic.YandexMusicApiService
+import com.theveloper.pixelplay.data.network.yandexmusic.YandexMusicManager
+import com.theveloper.pixelplay.data.network.yandexmusic.YandexTokenStore
 import com.theveloper.pixelplay.data.repository.ArtistImageRepository
 import com.theveloper.pixelplay.data.repository.LyricsRepository
 import com.theveloper.pixelplay.data.repository.LyricsRepositoryImpl
@@ -165,7 +171,9 @@ object AppModule {
             PixelPlayDatabase.MIGRATION_38_39,
             PixelPlayDatabase.MIGRATION_39_40,
             PixelPlayDatabase.MIGRATION_40_41,
-            PixelPlayDatabase.MIGRATION_41_42
+            PixelPlayDatabase.MIGRATION_41_42,
+            PixelPlayDatabase.MIGRATION_42_43,
+            PixelPlayDatabase.MIGRATION_43_44
         )
             .addCallback(PixelPlayDatabase.createRuntimeArtifactsCallback())
             .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
@@ -359,6 +367,12 @@ object AppModule {
     @Provides
     fun provideNeteaseDao(database: PixelPlayDatabase): com.theveloper.pixelplay.data.database.NeteaseDao {
         return database.neteaseDao()
+    }
+
+    @Singleton
+    @Provides
+    fun provideYandexMusicDao(database: PixelPlayDatabase): com.theveloper.pixelplay.data.database.YandexMusicDao {
+        return database.yandexMusicDao()
     }
 
     @Provides
@@ -585,5 +599,76 @@ object AppModule {
         musicDao: MusicDao
     ): ArtistImageRepository {
         return ArtistImageRepository(deezerApiService, musicDao)
+    }
+
+    // ── Yandex Music ──────────────────────────────────────────────────────────
+
+    /**
+     * OkHttpClient for Yandex Music API with OAuth token interceptor.
+     * Reads the token dynamically from [YandexTokenStore].
+     */
+    @Provides
+    @Singleton
+    @YandexMusicRetrofit
+    fun provideYandexMusicOkHttpClient(tokenStore: YandexTokenStore): OkHttpClient {
+        val loggingInterceptor = HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.HEADERS
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+            redactHeader("Authorization")
+        }
+        return OkHttpClient.Builder()
+            .connectTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+            .readTimeout(15, java.util.concurrent.TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                val builder = chain.request().newBuilder()
+                    .header("User-Agent", "Yandex-Music-API")
+                    .header("X-Yandex-Music-Client", "YandexMusicAndroid/24023621")
+                tokenStore.accessToken?.let { token ->
+                    builder.header("Authorization", "OAuth $token")
+                }
+                chain.proceed(builder.build())
+            }
+            .addInterceptor(loggingInterceptor)
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    @YandexMusicRetrofit
+    fun provideYandexMusicRetrofit(@YandexMusicRetrofit okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://api.music.yandex.net/")
+            .client(okHttpClient)
+            .addConverterFactory(
+                Json { ignoreUnknownKeys = true; coerceInputValues = true }.asConverterFactory("application/json".toMediaType())
+            )
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideYandexMusicApiService(@YandexMusicRetrofit retrofit: Retrofit): YandexMusicApiService {
+        return retrofit.create(YandexMusicApiService::class.java)
+    }
+
+    /** Retrofit for Yandex OAuth endpoints (oauth.yandex.ru). Uses Gson. */
+    @Provides
+    @Singleton
+    @YandexOAuthRetrofit
+    fun provideYandexOAuthRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        return Retrofit.Builder()
+            .baseUrl("https://oauth.yandex.ru/")
+            .client(okHttpClient)
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+    }
+
+    @Provides
+    @Singleton
+    fun provideYandexAuthApiService(@YandexOAuthRetrofit retrofit: Retrofit): YandexAuthApiService {
+        return retrofit.create(YandexAuthApiService::class.java)
     }
 }

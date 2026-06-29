@@ -427,7 +427,7 @@ class MusicService : MediaLibraryService() {
 
         super.onCreate()
         listeningStatsTracker.initialize(appScope)
-        
+
         // Ensure engine is ready (re-initialize if service was restarted)
         engine.initialize()
         replayGainProcessor.captureUserVolume(engine.masterPlayer.volume)
@@ -1669,8 +1669,9 @@ class MusicService : MediaLibraryService() {
         for (index in 0 until mediaItemCount) {
             val mediaItem = player.getMediaItemAt(index)
             val metadata = mediaItem.mediaMetadata
-            val uri = mediaItem.localConfiguration?.uri?.toString()
+            val uri = mediaItem.requestMetadata.mediaUri?.toString()
                 ?: metadata.extras?.getString(MediaItemBuilder.EXTERNAL_EXTRA_CONTENT_URI)
+                ?: mediaItem.localConfiguration?.uri?.toString()
 
             if (mediaItem.mediaId.isBlank() || uri.isNullOrBlank()) {
                 continue
@@ -1760,13 +1761,9 @@ class MusicService : MediaLibraryService() {
             else -> 0
         }
 
-        val preparedItems = restoredItems.toMutableList()
-        preparedItems.getOrNull(resolvedIndex)?.let { currentItem ->
-            val resolvedCurrentItem = runCatching { engine.resolveMediaItem(currentItem) }.getOrNull()
-            if (resolvedCurrentItem != null && resolvedCurrentItem != currentItem) {
-                preparedItems[resolvedIndex] = resolvedCurrentItem
-            }
-        }
+        val preparedItems = restoredItems.map { item ->
+            runCatching { engine.resolveMediaItem(item) }.getOrDefault(item)
+        }.toMutableList()
 
         withContext(Dispatchers.Main.immediate) {
             val player = engine.masterPlayer
@@ -1846,6 +1843,11 @@ class MusicService : MediaLibraryService() {
         return MediaItem.Builder()
             .setMediaId(snapshotItem.mediaId)
             .setUri(MediaItemBuilder.playbackUri(snapshotItem.uri))
+            .setRequestMetadata(
+                MediaItem.RequestMetadata.Builder()
+                    .setMediaUri(Uri.parse(snapshotItem.uri))
+                    .build()
+            )
             .setMediaMetadata(metadataBuilder.build())
             .build()
     }
@@ -2048,7 +2050,7 @@ class MusicService : MediaLibraryService() {
                 lightPlayPauseIcon = it.light.onPrimary.toArgb(),
                 lightPrevNextBackground = it.light.onPrimary.toArgb(),
                 lightPrevNextIcon = it.light.primary.toArgb(),
-                
+
                 darkSurfaceContainer = it.dark.surfaceContainer.toArgb(),
                 darkSurfaceContainerLowest = it.dark.surfaceContainerLowest.toArgb(),
                 darkSurfaceContainerLow = it.dark.surfaceContainerLow.toArgb(),
@@ -2570,7 +2572,7 @@ class MusicService : MediaLibraryService() {
         val changed = isManualShuffleEnabled != enabled
         isManualShuffleEnabled = enabled
         session.player.shuffleModeEnabled = enabled
-        
+
         if (persistentShuffleEnabled) {
             serviceScope.launch {
                 userPreferencesRepository.setShuffleOn(enabled)

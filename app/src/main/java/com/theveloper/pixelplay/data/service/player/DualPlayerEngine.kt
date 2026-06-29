@@ -78,7 +78,7 @@ internal fun shouldResumeAfterTransientAudioFocusLoss(
 ): Boolean {
     return masterPlayWhenReady ||
         masterIsPlaying ||
-        (transitionRunning && (auxiliaryPlayWhenReady || auxiliaryIsPlaying))
+       (transitionRunning && (auxiliaryPlayWhenReady || auxiliaryIsPlaying))
 }
 
 internal fun shouldDisableAudioOffloadByDefaultForDevice(
@@ -220,6 +220,7 @@ class DualPlayerEngine @Inject constructor(
     private val navidromeStreamProxy: NavidromeStreamProxy,
     private val jellyfinStreamProxy: com.theveloper.pixelplay.data.jellyfin.JellyfinStreamProxy,
     private val gdriveStreamProxy: com.theveloper.pixelplay.data.gdrive.GDriveStreamProxy,
+    private val yandexMusicStreamProxy: com.theveloper.pixelplay.data.yandexmusic.YandexMusicStreamProxy,
     private val telegramCacheManager: com.theveloper.pixelplay.data.telegram.TelegramCacheManager,
     private val connectivityStateHolder: com.theveloper.pixelplay.presentation.viewmodel.ConnectivityStateHolder
 ) {
@@ -234,10 +235,10 @@ class DualPlayerEngine @Inject constructor(
         private const val POST_TRANSITION_OFFLOAD_GUARD_MS = 2_000L
         private const val MAX_AUXILIARY_TIMELINE_ITEMS = 200
         private val LOCAL_MEDIA_SCHEMES = setOf("content", "file", "android.resource")
-        private val REMOTE_MEDIA_SCHEMES = setOf("http", "https", "telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive")
+        private val REMOTE_MEDIA_SCHEMES = setOf("http", "https", "telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive", "yandexmusic")
         // Subset of REMOTE_MEDIA_SCHEMES: schemes that need proxy resolution.
         // http/https resolve directly and must NOT enter the resolvedUriCache lookup path.
-        private val CLOUD_PROXY_SCHEMES = setOf("telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive")
+        private val CLOUD_PROXY_SCHEMES = setOf("telegram", "netease", "qqmusic", "navidrome", "jellyfin", "gdrive", "yandexmusic")
     }
 
     data class TransitionTarget(
@@ -272,7 +273,7 @@ class DualPlayerEngine @Inject constructor(
     fun setOnPlayerAboutToBeReleasedListener(listener: (Player) -> Unit) {
         onPlayerAboutToBeReleasedListener = listener
     }
-    
+
     // Active Audio Session ID Flow
     private val _activeAudioSessionId = MutableStateFlow(0)
     val activeAudioSessionId: StateFlow<Int> = _activeAudioSessionId.asStateFlow()
@@ -521,7 +522,7 @@ class DualPlayerEngine @Inject constructor(
                     "scheme" to (mediaItem?.localConfiguration?.uri?.scheme ?: "unknown")
                 )
             }
-            
+
             // If the transition was not automatic (e.g. user skip or playlist change),
             // immediately cancel any background crossfade logic to ensure responsiveness.
             if (reason != Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
@@ -892,7 +893,7 @@ class DualPlayerEngine @Inject constructor(
         if (!::playerA.isInitialized) return
         val mode = wakeModeFor(playerA.currentMediaItem)
         if (currentWakeMode == mode) return
-        
+
         try {
             playerA.setWakeMode(mode)
             playerB?.setWakeMode(mode)
@@ -1095,7 +1096,7 @@ class DualPlayerEngine @Inject constructor(
             .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
             .setUsage(C.USAGE_MEDIA)
             .build()
-            
+
         val resolver = object : ResolvingDataSource.Resolver {
             override fun resolveDataSpec(dataSpec: DataSpec): DataSpec {
                 val uri = dataSpec.uri
@@ -1111,7 +1112,7 @@ class DualPlayerEngine @Inject constructor(
                 return dataSpec
             }
         }
-        
+
         val dataSourceFactory = DefaultDataSource.Factory(context)
         val resolvingFactory = ResolvingDataSource.Factory(dataSourceFactory, resolver)
         val extractorsFactory = DefaultExtractorsFactory()
@@ -1204,6 +1205,7 @@ class DualPlayerEngine @Inject constructor(
             "navidrome" -> resolveNavidromeUriAsync(uriString)
             "jellyfin" -> resolveJellyfinUriAsync(uriString)
             "gdrive" -> resolveGDriveUriAsync(uriString)
+            "yandexmusic" -> resolveYandexMusicUriAsync(uriString)
             else -> null
         }
 
@@ -1269,6 +1271,11 @@ class DualPlayerEngine @Inject constructor(
         gdriveStreamProxy.resolveGDriveUri(uriString)?.toUri()
     }
 
+    private suspend fun resolveYandexMusicUriAsync(uriString: String): Uri? = withContext(Dispatchers.IO) {
+        if (!yandexMusicStreamProxy.ensureReady(5_000L)) return@withContext null
+        yandexMusicStreamProxy.resolveYandexMusicUri(uriString)?.let { Uri.parse(it) }
+    }
+
     suspend fun resolveMediaItem(mediaItem: MediaItem): MediaItem {
         val uri = mediaItem.localConfiguration?.uri ?: return mediaItem
         val scheme = uri.scheme
@@ -1276,7 +1283,12 @@ class DualPlayerEngine @Inject constructor(
         // reach resolveCloudUri, so checking them wastes an IO dispatch.
         if (scheme !in CLOUD_PROXY_SCHEMES) return mediaItem
         val resolvedUri = resolveCloudUri(uri)
-        return if (resolvedUri == uri) mediaItem else mediaItem.buildUpon().setUri(resolvedUri).build()
+        return if (resolvedUri == uri) mediaItem else mediaItem.buildUpon()
+            .setUri(resolvedUri)
+            .setRequestMetadata(
+                mediaItem.requestMetadata.buildUpon().setMediaUri(uri).build()
+            )
+            .build()
     }
 
     suspend fun prepareNext(target: TransitionTarget, startPositionMs: Long = 0L) {

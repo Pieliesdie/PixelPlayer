@@ -34,9 +34,11 @@ import androidx.sqlite.db.SupportSQLiteDatabase
         JellyfinSongEntity::class,
         JellyfinPlaylistEntity::class,
         AiCacheEntity::class,
-        AiUsageEntity::class
+        AiUsageEntity::class,
+        YandexMusicSongEntity::class,
+        YandexMusicPlaylistEntity::class
     ],
-    version = 42,
+    version = 44,
     exportSchema = true
 )
 abstract class PixelPlayDatabase : RoomDatabase() {
@@ -54,6 +56,7 @@ abstract class PixelPlayDatabase : RoomDatabase() {
     abstract fun qqmusicDao(): QqMusicDao
     abstract fun navidromeDao(): NavidromeDao
     abstract fun jellyfinDao(): JellyfinDao
+    abstract fun yandexMusicDao(): YandexMusicDao
     abstract fun aiCacheDao(): AiCacheDao
     abstract fun aiUsageDao(): AiUsageDao
 
@@ -744,6 +747,46 @@ abstract class PixelPlayDatabase : RoomDatabase() {
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_navidrome_songs_navidrome_id ON navidrome_songs(navidrome_id)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_navidrome_songs_playlist_id ON navidrome_songs(playlist_id)")
                 db.execSQL("CREATE INDEX IF NOT EXISTS index_navidrome_songs_playlist_id_date_added ON navidrome_songs(playlist_id, date_added)")
+            }
+        }
+
+        val MIGRATION_43_44 = object : Migration(43, 44) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE yandex_songs ADD COLUMN genre TEXT")
+            }
+        }
+
+        val MIGRATION_42_43 = object : Migration(42, 43) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS yandex_songs (
+                        id TEXT NOT NULL PRIMARY KEY,
+                        yandex_id TEXT NOT NULL,
+                        playlist_kind TEXT NOT NULL,
+                        title TEXT NOT NULL,
+                        artist TEXT NOT NULL,
+                        album TEXT NOT NULL,
+                        duration INTEGER NOT NULL,
+                        album_art_url TEXT,
+                        mime_type TEXT NOT NULL,
+                        bitrate INTEGER,
+                        date_added INTEGER NOT NULL
+                    )
+                """.trimIndent())
+
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_yandex_songs_yandex_id ON yandex_songs(yandex_id)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_yandex_songs_playlist_kind ON yandex_songs(playlist_kind)")
+                db.execSQL("CREATE INDEX IF NOT EXISTS index_yandex_songs_playlist_kind_date_added ON yandex_songs(playlist_kind, date_added)")
+
+                db.execSQL("""
+                    CREATE TABLE IF NOT EXISTS yandex_playlists (
+                        kind TEXT NOT NULL PRIMARY KEY,
+                        title TEXT NOT NULL,
+                        cover_url TEXT,
+                        song_count INTEGER NOT NULL,
+                        last_sync_time INTEGER NOT NULL
+                    )
+                """.trimIndent())
             }
         }
 

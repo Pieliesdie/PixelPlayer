@@ -29,3 +29,17 @@ annotation class BackupGson
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class AppScope
+
+/**
+ * Qualifier for Yandex Music Retrofit instance.
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class YandexMusicRetrofit
+
+/**
+ * Qualifier for Yandex OAuth Retrofit instance (oauth.yandex.ru).
+ */
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class YandexOAuthRetrofit

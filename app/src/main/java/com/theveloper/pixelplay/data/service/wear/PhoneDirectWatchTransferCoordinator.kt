@@ -10,6 +10,7 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.core.graphics.get
 import androidx.core.net.toUri
 import com.theveloper.pixelplay.data.gdrive.GDriveStreamProxy
+import com.theveloper.pixelplay.data.yandexmusic.YandexMusicStreamProxy
 import com.google.android.gms.wearable.Wearable
 import com.theveloper.pixelplay.data.model.Song
 import com.theveloper.pixelplay.data.navidrome.NavidromeStreamProxy
@@ -67,6 +68,7 @@ class PhoneDirectWatchTransferCoordinator @Inject constructor(
     private val navidromeStreamProxy: NavidromeStreamProxy,
     private val jellyfinStreamProxy: com.theveloper.pixelplay.data.jellyfin.JellyfinStreamProxy,
     private val gDriveStreamProxy: GDriveStreamProxy,
+    private val yandexMusicStreamProxy: YandexMusicStreamProxy,
     private val okHttpClient: OkHttpClient,
 ) {
     private val contentResolver by lazy { application.contentResolver }
@@ -285,7 +287,8 @@ class PhoneDirectWatchTransferCoordinator @Inject constructor(
         if (
             contentUri.startsWith("telegram://") ||
             contentUri.startsWith("netease://") ||
-            contentUri.startsWith("gdrive://")
+            contentUri.startsWith("gdrive://") ||
+            contentUri.startsWith("yandexmusic://")
         ) {
             return false
         }
@@ -417,6 +420,10 @@ class PhoneDirectWatchTransferCoordinator @Inject constructor(
                 ensureGDriveProxyReady() || return null
                 gDriveStreamProxy.resolveGDriveUri(rawUri)
             }
+            "yandexmusic" -> {
+                ensureCloudProxyReady(yandexMusicStreamProxy) || return null
+                yandexMusicStreamProxy.resolveYandexMusicUri(rawUri)
+            }
             else -> null
         }
     }
@@ -453,6 +460,7 @@ class PhoneDirectWatchTransferCoordinator @Inject constructor(
             is QqMusicStreamProxy -> proxy.ensureReady(5_000L)
             is NavidromeStreamProxy -> proxy.ensureReady(5_000L)
             is com.theveloper.pixelplay.data.jellyfin.JellyfinStreamProxy -> proxy.ensureReady(5_000L)
+            is YandexMusicStreamProxy -> proxy.ensureReady(5_000L)
             else -> false
         }
     }

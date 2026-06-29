@@ -9,6 +9,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -84,6 +85,7 @@ import com.theveloper.pixelplay.presentation.jellyfin.auth.JellyfinLoginActivity
 import com.theveloper.pixelplay.presentation.navidrome.auth.NavidromeLoginActivity
 import com.theveloper.pixelplay.presentation.qqmusic.auth.QqMusicLoginActivity
 import com.theveloper.pixelplay.presentation.telegram.auth.TelegramLoginActivity
+import com.theveloper.pixelplay.presentation.yandexmusic.auth.YandexLoginActivity
 import com.theveloper.pixelplay.presentation.viewmodel.AccountsViewModel
 import com.theveloper.pixelplay.presentation.viewmodel.ExternalAccountUiModel
 import com.theveloper.pixelplay.presentation.viewmodel.ExternalServiceAccount
@@ -98,6 +100,7 @@ fun AccountsScreen(
     onOpenQqMusicDashboard: () -> Unit = {},
     onOpenNavidromeDashboard: () -> Unit = {},
     onOpenJellyfinDashboard: () -> Unit = {},
+    onOpenYandexDashboard: () -> Unit = {},
     viewModel: AccountsViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -213,6 +216,7 @@ fun AccountsScreen(
                                 onOpenQqMusicDashboard = onOpenQqMusicDashboard,
                                 onOpenNavidromeDashboard = onOpenNavidromeDashboard,
                                 onOpenJellyfinDashboard = onOpenJellyfinDashboard,
+                                onOpenYandexDashboard = onOpenYandexDashboard,
                                 preferNeteaseDashboard = true
                             )
                         },
@@ -227,6 +231,8 @@ fun AccountsScreen(
                             painterResource(R.drawable.ic_jellyfin)
                         } else if (account.service == ExternalServiceAccount.NAVIDROME) {
                             painterResource(R.drawable.ic_navidrome_md3)
+                        } else if (account.service == ExternalServiceAccount.YANDEX_MUSIC) {
+                            painterResource(R.drawable.yandex_music)
                         } else null
                     )
                 }
@@ -242,6 +248,7 @@ fun AccountsScreen(
                                 onOpenQqMusicDashboard = onOpenQqMusicDashboard,
                                 onOpenNavidromeDashboard = onOpenNavidromeDashboard,
                                 onOpenJellyfinDashboard = onOpenJellyfinDashboard,
+                                onOpenYandexDashboard = onOpenYandexDashboard,
                                 preferNeteaseDashboard = false
                             )
                         }
@@ -386,14 +393,24 @@ private fun ConnectedAccountCard(
             color = palette.iconContainer
         ) {
             if (painter != null) {
-                Icon(
-                    painter = painter,
-                    contentDescription = null,
-                    tint = palette.iconTint,
-                    modifier = Modifier
-                        .padding(10.dp)
-                        .size(20.dp)
-                )
+                if (account.service == ExternalServiceAccount.YANDEX_MUSIC) {
+                    Image(
+                        painter = painter,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(20.dp)
+                    )
+                } else {
+                    Icon(
+                        painter = painter,
+                        contentDescription = null,
+                        tint = palette.iconTint,
+                        modifier = Modifier
+                            .padding(10.dp)
+                            .size(20.dp)
+                    )
+                }
             } else {
                 ServiceIcon(
                     service = account.service,
@@ -563,6 +580,7 @@ private fun EmptyAccountsCard(
                     ExternalServiceAccount.GOOGLE_DRIVE -> painterResource(R.drawable.rounded_drive_export_24)
                     ExternalServiceAccount.JELLYFIN -> painterResource(R.drawable.ic_jellyfin)
                     ExternalServiceAccount.NAVIDROME -> painterResource(R.drawable.ic_navidrome_md3)
+                    ExternalServiceAccount.YANDEX_MUSIC -> painterResource(R.drawable.yandex_music)
                 }
                 FilledTonalButton(
                     onClick = { if (!isComingSoon) onConnect(service) },
@@ -655,6 +673,14 @@ private fun servicePalette(service: ExternalServiceAccount): ServicePalette {
             primaryActionContainer = Color(0xFFE3F2FD),
             primaryActionTint = Color(0xFF1565C0)
         )
+        ExternalServiceAccount.YANDEX_MUSIC -> ServicePalette(
+            iconContainer = Color(0xFFFFF0C7),
+            iconTint = Color(0xFF704900),
+            statusContainer = Color(0xFFFFF0C7),
+            statusTint = Color(0xFF704900),
+            primaryActionContainer = MaterialTheme.colorScheme.tertiaryContainer,
+            primaryActionTint = MaterialTheme.colorScheme.onTertiaryContainer
+        )
     }
 }
 
@@ -666,12 +692,19 @@ private fun accountIcon(service: ExternalServiceAccount): ImageVector {
         ExternalServiceAccount.QQ_MUSIC -> Icons.Rounded.MusicNote
         ExternalServiceAccount.NAVIDROME -> Icons.Rounded.CloudQueue
         ExternalServiceAccount.JELLYFIN -> Icons.Rounded.CloudQueue
+        ExternalServiceAccount.YANDEX_MUSIC -> Icons.Rounded.MusicNote
     }
 }
 
 @Composable
 private fun ServiceIcon(service: ExternalServiceAccount, tint: Color, modifier: Modifier = Modifier) {
-    if (service == ExternalServiceAccount.NAVIDROME) {
+    if (service == ExternalServiceAccount.YANDEX_MUSIC) {
+        Image(
+            painter = painterResource(R.drawable.yandex_music),
+            contentDescription = null,
+            modifier = modifier
+        )
+    } else if (service == ExternalServiceAccount.NAVIDROME) {
         Box(
             modifier = modifier,
             contentAlignment = Alignment.CenterStart
@@ -721,6 +754,7 @@ private fun serviceDisplayName(service: ExternalServiceAccount): String {
         ExternalServiceAccount.QQ_MUSIC -> stringResource(R.string.auth_qq_title)
         ExternalServiceAccount.NAVIDROME -> stringResource(R.string.auth_subsonic_title)
         ExternalServiceAccount.JELLYFIN -> stringResource(R.string.auth_jellyfin_title)
+        ExternalServiceAccount.YANDEX_MUSIC -> stringResource(R.string.auth_yandex_title)
     }
 }
 
@@ -731,6 +765,7 @@ private fun openService(
     onOpenQqMusicDashboard: () -> Unit,
     onOpenNavidromeDashboard: () -> Unit,
     onOpenJellyfinDashboard: () -> Unit,
+    onOpenYandexDashboard: () -> Unit,
     preferNeteaseDashboard: Boolean
 ) {
     when (service) {
@@ -780,6 +815,16 @@ private fun openService(
                 safeStartActivity(
                     context = context,
                     intent = Intent(context, JellyfinLoginActivity::class.java)
+                )
+            }
+        }
+        ExternalServiceAccount.YANDEX_MUSIC -> {
+            if (preferNeteaseDashboard) {
+                onOpenYandexDashboard()
+            } else {
+                safeStartActivity(
+                    context = context,
+                    intent = Intent(context, YandexLoginActivity::class.java)
                 )
             }
         }

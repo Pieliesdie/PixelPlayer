@@ -120,6 +120,13 @@
             android:theme="@style/Theme.PixelPlay"
             android:windowSoftInputMode="adjustResize" />
 
+        <activity
+            android:name=".presentation.yandexmusic.auth.YandexLoginActivity"
+            android:exported="false"
+            android:label="Yandex Music Login"
+            android:theme="@style/Theme.PixelPlay"
+            android:windowSoftInputMode="adjustResize" />
+
 
         <activity
             android:name=".ExternalPlayerActivity"

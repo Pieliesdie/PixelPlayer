@@ -7,6 +7,7 @@ import com.theveloper.pixelplay.data.jellyfin.JellyfinRepository
 import com.theveloper.pixelplay.data.navidrome.NavidromeRepository
 import com.theveloper.pixelplay.data.netease.NeteaseRepository
 import com.theveloper.pixelplay.data.qqmusic.QqMusicRepository
+import com.theveloper.pixelplay.data.yandexmusic.YandexMusicRepository
 import com.theveloper.pixelplay.data.repository.MusicRepository
 import com.theveloper.pixelplay.data.telegram.TelegramRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,7 +29,8 @@ enum class ExternalServiceAccount {
     NETEASE,
     QQ_MUSIC,
     NAVIDROME,
-    JELLYFIN
+    JELLYFIN,
+    YANDEX_MUSIC
 }
 
 data class ExternalAccountUiModel(
@@ -52,7 +54,8 @@ class AccountsViewModel @Inject constructor(
     private val neteaseRepository: NeteaseRepository,
     private val qqMusicRepository: QqMusicRepository,
     private val navidromeRepository: NavidromeRepository,
-    private val jellyfinRepository: JellyfinRepository
+    private val jellyfinRepository: JellyfinRepository,
+    private val yandexMusicRepository: YandexMusicRepository
 ) : ViewModel() {
 
     private val loggingOutServices = MutableStateFlow<Set<ExternalServiceAccount>>(emptySet())
@@ -101,6 +104,13 @@ class AccountsViewModel @Inject constructor(
         connected to playlistCount
     }
 
+    private val yandexMusicStateFlow = combine(
+        yandexMusicRepository.isLoggedInFlow,
+        yandexMusicRepository.getPlaylists().map { it.size }
+    ) { connected, playlistCount ->
+        connected to playlistCount
+    }
+
     val uiState: StateFlow<AccountsUiState> = combine(
         combine(
             listOf(
@@ -109,7 +119,8 @@ class AccountsViewModel @Inject constructor(
                 neteaseStateFlow,
                 qqMusicStateFlow,
                 navidromeStateFlow,
-                jellyfinStateFlow
+                jellyfinStateFlow,
+                yandexMusicStateFlow
             )
         ) { it.toList() },
         loggingOutServices
@@ -120,6 +131,7 @@ class AccountsViewModel @Inject constructor(
         val (qqConnected, qqPlaylistCount) = states[3] as Pair<Boolean, Int>
         val (navidromeConnected, navidromePlaylistCount) = states[4] as Pair<Boolean, Int>
         val (jellyfinConnected, jellyfinPlaylistCount) = states[5] as Pair<Boolean, Int>
+        val (yandexConnected, yandexPlaylistCount) = states[6] as Pair<Boolean, Int>
 
         val connectedAccounts = buildList {
             if (telegramConnected) {
@@ -224,6 +236,23 @@ class AccountsViewModel @Inject constructor(
                     )
                 )
             }
+            if (yandexConnected) {
+                add(
+                    ExternalAccountUiModel(
+                        service = ExternalServiceAccount.YANDEX_MUSIC,
+                        title = "Yandex Music",
+                        accountLabel = yandexMusicRepository.userNickname
+                            ?.takeIf { it.isNotBlank() }
+                            ?: "Yandex account connected",
+                        syncedContentLabel = formatCount(
+                            count = yandexPlaylistCount,
+                            singular = "synced playlist",
+                            plural = "synced playlists"
+                        ),
+                        isLoggingOut = ExternalServiceAccount.YANDEX_MUSIC in activeLogouts
+                    )
+                )
+            }
         }
 
         val disconnectedServices = buildList {
@@ -233,6 +262,7 @@ class AccountsViewModel @Inject constructor(
             if (!qqConnected) add(ExternalServiceAccount.QQ_MUSIC)
             if (!navidromeConnected) add(ExternalServiceAccount.NAVIDROME)
             if (!jellyfinConnected) add(ExternalServiceAccount.JELLYFIN)
+            if (!yandexConnected) add(ExternalServiceAccount.YANDEX_MUSIC)
         }
 
         AccountsUiState(
@@ -259,6 +289,7 @@ class AccountsViewModel @Inject constructor(
                         ExternalServiceAccount.QQ_MUSIC -> qqMusicRepository.logout()
                         ExternalServiceAccount.NAVIDROME -> navidromeRepository.logout()
                         ExternalServiceAccount.JELLYFIN -> jellyfinRepository.logout()
+                        ExternalServiceAccount.YANDEX_MUSIC -> yandexMusicRepository.logout()
                     }
                 }
             } finally {

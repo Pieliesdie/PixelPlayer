@@ -135,6 +135,7 @@ fun HomeScreen(
     qqMusicViewModel: QqMusicDashboardViewModel = hiltViewModel(),
     navidromeViewModel: NavidromeDashboardViewModel = hiltViewModel(),
     jellyfinViewModel: JellyfinDashboardViewModel = hiltViewModel(),
+    accountsViewModel: com.theveloper.pixelplay.presentation.viewmodel.AccountsViewModel = hiltViewModel(),
     onOpenSidebar: () -> Unit
 ) {
     val context = LocalContext.current
@@ -553,6 +554,8 @@ fun HomeScreen(
         val isQqMusicLoggedIn by qqMusicViewModel.isLoggedIn.collectAsStateWithLifecycle()
         val isNavidromeLoggedIn by navidromeViewModel.isLoggedIn.collectAsStateWithLifecycle()
         val isJellyfinLoggedIn by jellyfinViewModel.isLoggedIn.collectAsStateWithLifecycle()
+        val accountsUiState by accountsViewModel.uiState.collectAsStateWithLifecycle()
+        val isYandexLoggedIn = accountsUiState.connectedAccounts.any { it.service == com.theveloper.pixelplay.presentation.viewmodel.ExternalServiceAccount.YANDEX_MUSIC }
         StreamingProviderSheet(
             onDismissRequest = { showStreamingProviderSheet = false },
             isNeteaseLoggedIn = isNeteaseLoggedIn,
@@ -570,6 +573,10 @@ fun HomeScreen(
             isJellyfinLoggedIn = isJellyfinLoggedIn,
             onNavigateToJellyfinDashboard = {
                 navController.navigateSafely(Screen.JellyfinDashboard.route)
+            },
+            isYandexLoggedIn = isYandexLoggedIn,
+            onNavigateToYandexDashboard = {
+                navController.navigateSafely(Screen.YandexDashboard.route)
             }
         )
     }

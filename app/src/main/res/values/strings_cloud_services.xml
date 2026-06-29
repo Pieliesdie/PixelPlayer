@@ -225,4 +225,14 @@
     <string name="auth_qq_login_title">Login to QQ Music</string>
     <string name="auth_qq_security_msg">Security note: your password is entered only in QQ Music web pages. PixelPlayer stores session cookies to sync your library.</string>
     <string name="auth_qq_title">QQ Music</string>
+
+    <!-- Yandex Music Auth -->
+    <string name="auth_yandex_title">Yandex Music</string>
+    <string name="auth_yandex_login_title">Yandex Login</string>
+    <string name="auth_yandex_connect_subtitle">Connect your Yandex account to stream music from Yandex Music.</string>
+    <string name="auth_yandex_enter_code_msg">Enter this code in your browser:</string>
+    <string name="auth_yandex_open_browser">Open Browser</string>
+    <string name="auth_yandex_waiting_auth">Waiting for authorization…</string>
+    <string name="auth_yandex_polling_hint">A browser tab will open. Sign in to Yandex and authorize PixelPlayer, then return here.</string>
+    <string name="auth_yandex_exit_title">Exit Yandex login?</string>
 </resources>

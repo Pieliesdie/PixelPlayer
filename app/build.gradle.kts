@@ -259,6 +259,7 @@ dependencies {
     // Networking & Serialization
     implementation(libs.retrofit)
     implementation(libs.converter.gson)
+    implementation(libs.converter.kotlinx.serialization)
     implementation(libs.okhttp)
     implementation(libs.logging.interceptor)
     implementation(libs.gson)

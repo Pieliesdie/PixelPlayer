@@ -230,4 +230,14 @@
     <string name="auth_qq_login_title">Вход в QQ Music</string>
     <string name="auth_qq_security_msg">Примечание по безопасности: ваш пароль вводится только на страницах QQ Music. PixelPlayer сохраняет cookies сессии для синхронизации вашей медиатеки.</string>
     <string name="auth_qq_title">QQ Music</string>
+
+    <!-- Yandex Music Auth -->
+    <string name="auth_yandex_title">Яндекс Музыка</string>
+    <string name="auth_yandex_login_title">Вход в Яндекс</string>
+    <string name="auth_yandex_connect_subtitle">Подключите аккаунт Яндекса для прослушивания музыки из Яндекс Музыки.</string>
+    <string name="auth_yandex_enter_code_msg">Введите этот код в браузере:</string>
+    <string name="auth_yandex_open_browser">Открыть браузер</string>
+    <string name="auth_yandex_waiting_auth">Ожидание авторизации…</string>
+    <string name="auth_yandex_polling_hint">Откроется вкладка браузера. Войдите в Яндекс и авторизуйте PixelPlayer, затем вернитесь сюда.</string>
+    <string name="auth_yandex_exit_title">Выйти из входа в Яндекс?</string>
 </resources>

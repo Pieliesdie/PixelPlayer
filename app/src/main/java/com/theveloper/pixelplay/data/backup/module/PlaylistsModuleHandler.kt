@@ -418,6 +418,7 @@ class PlaylistsModuleHandler @Inject constructor(
         musicDao.getAllNeteaseSongIds().mapTo(cloudIds) { it.toString() }
         musicDao.getAllGDriveSongIds().mapTo(cloudIds) { it.toString() }
         musicDao.getAllQqMusicSongIds().mapTo(cloudIds) { it.toString() }
+        musicDao.getAllYandexSongIds().mapTo(cloudIds) { it.toString() }
         return cloudIds
     }
 
