@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">Следовать текущим настройкам оформления телефона.</string>
     <string name="setup_recommended">Рекомендуется</string>
     <string name="setup_theme_footer">Позже это можно изменить в Настройки &gt; Внешний вид &gt; Тема приложения.</string>
+    <string name="setup_external_services_title">Дополнительные онлайн-сервисы</string>
+    <string name="setup_external_services_subtitle">PixelPlayer по умолчанию работает в офлайне. Включите только те запросы, которые вам нужны.</string>
+    <string name="setup_external_lyrics_title">Тексты песен из LRCLIB</string>
+    <string name="setup_external_lyrics_description">Искать на lrclib.net, когда отсутствуют локальные или встроенные тексты.</string>
+    <string name="setup_external_artist_images_title">Фото исполнителей из Deezer</string>
+    <string name="setup_external_artist_images_description">Загружать недостающие фото исполнителей из Deezer и кэшировать их.</string>
+    <string name="setup_external_services_footer">Вы можете изменить это позже в Настройки &gt; Управление музыкой &gt; Дополнительные онлайн-сервисы.</string>
     <string name="setup_library_layout_title">Макет медиатеки</string>
     <string name="setup_library_layout_subtitle">Выберите предпочтительный способ навигации по медиатеке.</string>
     <string name="setup_preview_songs_label">Треки</string>

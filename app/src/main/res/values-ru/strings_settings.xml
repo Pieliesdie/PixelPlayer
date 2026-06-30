@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Пересоздание базы данных…</string>
     <string name="settings_auto_scan_lrc_title">Автосканирование .lrc-файлов</string>
     <string name="settings_auto_scan_lrc_subtitle">Автоматически искать и привязывать .lrc-файлы из той же папки во время синхронизации.</string>
+    <string name="settings_online_services_section">Дополнительные онлайн-сервисы</string>
+    <string name="settings_external_lyrics_title">Тексты песен из LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">Разрешить поиск и скачивание с lrclib.net, когда тексты отсутствуют локально.</string>
+    <string name="settings_external_artist_images_title">Фото исполнителей из Deezer</string>
+    <string name="settings_external_artist_images_subtitle">Разрешить загрузку недостающих изображений исполнителей из Deezer с кэшированием.</string>
     <string name="settings_lyrics_management_section">Управление текстами песен</string>
     <string name="settings_lyrics_source_priority_title">Приоритет источников текстов</string>
     <string name="settings_lyrics_source_priority_subtitle">Выберите источник, который будет использоваться первым.</string>
