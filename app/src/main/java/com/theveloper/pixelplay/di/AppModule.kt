@@ -329,13 +329,15 @@ object AppModule {
         @ApplicationContext context: Context,
         lrcLibApiService: LrcLibApiService,
         lyricsDao: LyricsDao,
-        okHttpClient: OkHttpClient
+        okHttpClient: OkHttpClient,
+        userPreferencesRepository: UserPreferencesRepository
     ): LyricsRepository {
         return LyricsRepositoryImpl(
             context = context,
             lrcLibApiService = lrcLibApiService,
             lyricsDao = lyricsDao,
-            okHttpClient = okHttpClient
+            okHttpClient = okHttpClient,
+            userPreferencesRepository = userPreferencesRepository
         )
     }
 
@@ -596,9 +598,10 @@ object AppModule {
     @Singleton
     fun provideArtistImageRepository(
         deezerApiService: DeezerApiService,
-        musicDao: MusicDao
+        musicDao: MusicDao,
+        userPreferencesRepository: UserPreferencesRepository
     ): ArtistImageRepository {
-        return ArtistImageRepository(deezerApiService, musicDao)
+        return ArtistImageRepository(deezerApiService, musicDao, userPreferencesRepository)
     }
 
     // ── Yandex Music ──────────────────────────────────────────────────────────

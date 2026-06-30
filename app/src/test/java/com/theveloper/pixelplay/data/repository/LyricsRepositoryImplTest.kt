@@ -8,10 +8,12 @@ import com.theveloper.pixelplay.data.model.LyricsSourcePreference
 import com.theveloper.pixelplay.data.model.Song
 import com.theveloper.pixelplay.data.network.lyrics.LrcLibApiService
 import com.theveloper.pixelplay.data.network.lyrics.LrcLibResponse
+import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import okhttp3.OkHttpClient
 import java.io.File
@@ -19,6 +21,12 @@ import java.nio.file.Files
 import org.junit.jupiter.api.Test
 
 class LyricsRepositoryImplTest {
+
+    private fun mockUserPreferencesRepository(): UserPreferencesRepository {
+        return mockk<UserPreferencesRepository>(relaxed = true) {
+            every { externalLyricsEnabledFlow } returns flowOf(true)
+        }
+    }
 
     @Test
     fun parseBestEmbeddedLyricsField_prefersSyncedLyricsWhenLyricsFieldIsPlain() {
@@ -41,7 +49,8 @@ class LyricsRepositoryImplTest {
             context = mockk<Context>(relaxed = true),
             lrcLibApiService = mockk<LrcLibApiService>(relaxed = true),
             lyricsDao = mockk<LyricsDao>(relaxed = true),
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = Song(
             id = "12",
@@ -75,7 +84,8 @@ class LyricsRepositoryImplTest {
             context = mockk<Context>(relaxed = true),
             lrcLibApiService = apiService,
             lyricsDao = mockk<LyricsDao>(relaxed = true),
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = Song(
             id = "45",
@@ -117,7 +127,8 @@ class LyricsRepositoryImplTest {
             context = mockk<Context>(relaxed = true),
             lrcLibApiService = apiService,
             lyricsDao = lyricsDao,
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = Song(
             id = "77",
@@ -165,7 +176,8 @@ class LyricsRepositoryImplTest {
             context = testContext(),
             lrcLibApiService = apiService,
             lyricsDao = lyricsDao,
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = testSong(
             id = "101",
@@ -197,7 +209,8 @@ class LyricsRepositoryImplTest {
             context = testContext(),
             lrcLibApiService = apiService,
             lyricsDao = lyricsDao,
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = testSong(
             id = "102",
@@ -229,7 +242,8 @@ class LyricsRepositoryImplTest {
             context = testContext(),
             lrcLibApiService = apiService,
             lyricsDao = lyricsDao,
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = testSong(
             id = "103",
@@ -262,7 +276,8 @@ class LyricsRepositoryImplTest {
             context = testContext(),
             lrcLibApiService = apiService,
             lyricsDao = lyricsDao,
-            okHttpClient = mockk<OkHttpClient>(relaxed = true)
+            okHttpClient = mockk<OkHttpClient>(relaxed = true),
+            userPreferencesRepository = mockUserPreferencesRepository()
         )
         val song = testSong(
             id = "104",

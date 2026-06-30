@@ -24,6 +24,7 @@ import com.theveloper.pixelplay.utils.LogUtils
 import com.theveloper.pixelplay.utils.LyricsUtils
 import com.theveloper.pixelplay.utils.MultiLangRomanizer
 import com.theveloper.pixelplay.utils.NetworkRetryUtils
+import com.theveloper.pixelplay.data.preferences.UserPreferencesRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,6 +32,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import retrofit2.HttpException
 import java.io.File
@@ -116,9 +118,12 @@ class LyricsRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val lrcLibApiService: LrcLibApiService,
     private val lyricsDao: com.theveloper.pixelplay.data.database.LyricsDao,
-    private val okHttpClient: OkHttpClient
+    private val okHttpClient: OkHttpClient,
+    private val userPreferencesRepository: UserPreferencesRepository
 ) : LyricsRepository {
 
+    private suspend fun isExternalLyricsEnabled(): Boolean =
+        userPreferencesRepository.externalLyricsEnabledFlow.first()
 
     companion object {
         private const val TAG = "LyricsRepository"
@@ -389,47 +394,36 @@ class LyricsRepositoryImpl @Inject constructor(
         }
 
         // Define source fetchers (matching Rhythm pattern)
-        val fetchFromLocal: suspend () -> Lyrics? = {
-            findLocalLyricsFile(song)
-        }
+        val remoteLyricsEnabled = isExternalLyricsEnabled()
 
-        val fetchFromEmbedded: suspend () -> Lyrics? = {
-            loadEmbeddedLyricsFromMetadata(song)
-        }
+        val fetchFromApi: Pair<String, suspend () -> Lyrics?> = "API" to { fetchLyricsFromAPI(song) }
+        val fetchFromEmbedded: Pair<String, suspend () -> Lyrics?> = "Embedded" to { loadEmbeddedLyricsFromMetadata(song) }
+        val fetchFromLocal: Pair<String, suspend () -> Lyrics?> = "Local" to { findLocalLyricsFile(song) }
 
-        val fetchFromAPI: suspend () -> Lyrics? = {
-            fetchLyricsFromAPI(song)
-        }
-
-        // Try sources in order based on preference, with fallback (matching Rhythm)
+        // Try sources in order based on preference, removing remote lookup when it is disabled.
         val sourceFetchers = when (sourcePreference) {
-            LyricsSourcePreference.API_FIRST -> listOf(fetchFromAPI, fetchFromEmbedded, fetchFromLocal)
-            LyricsSourcePreference.EMBEDDED_FIRST -> listOf(fetchFromEmbedded, fetchFromAPI, fetchFromLocal)
-            LyricsSourcePreference.LOCAL_FIRST -> listOf(fetchFromLocal, fetchFromEmbedded, fetchFromAPI)
+            LyricsSourcePreference.API_FIRST -> buildList {
+                if (remoteLyricsEnabled) add(fetchFromApi)
+                add(fetchFromEmbedded)
+                add(fetchFromLocal)
+            }
+            LyricsSourcePreference.EMBEDDED_FIRST -> buildList {
+                add(fetchFromEmbedded)
+                if (remoteLyricsEnabled) add(fetchFromApi)
+                add(fetchFromLocal)
+            }
+            LyricsSourcePreference.LOCAL_FIRST -> buildList {
+                add(fetchFromLocal)
+                add(fetchFromEmbedded)
+                if (remoteLyricsEnabled) add(fetchFromApi)
+            }
         }
 
         // Try each source in order until we find lyrics (early return on success)
-        for ((index, fetcher) in sourceFetchers.withIndex()) {
+        for ((sourceName, fetcher) in sourceFetchers) {
             try {
                 val lyrics = fetcher()
                 if (lyrics != null && lyrics.isValid()) {
-                    val sourceName = when (index) {
-                        0 -> when (sourcePreference) {
-                            LyricsSourcePreference.API_FIRST -> "API"
-                            LyricsSourcePreference.EMBEDDED_FIRST -> "Embedded"
-                            LyricsSourcePreference.LOCAL_FIRST -> "Local"
-                        }
-                        1 -> when (sourcePreference) {
-                            LyricsSourcePreference.API_FIRST -> "Embedded"
-                            LyricsSourcePreference.EMBEDDED_FIRST -> "API"
-                            LyricsSourcePreference.LOCAL_FIRST -> "Embedded"
-                        }
-                        else -> when (sourcePreference) {
-                            LyricsSourcePreference.API_FIRST -> "Local"
-                            LyricsSourcePreference.EMBEDDED_FIRST -> "Local"
-                            LyricsSourcePreference.LOCAL_FIRST -> "API"
-                        }
-                    }
                     Log.d(TAG, "Found lyrics from $sourceName for: ${song.displayArtist} - ${song.title}")
                     
                     // Cache the result
@@ -443,7 +437,7 @@ class LyricsRepositoryImpl @Inject constructor(
                     return@withContext lyrics
                 }
             } catch (e: Exception) {
-                Log.w(TAG, "Error fetching from source ${index + 1}: ${e.message}")
+                Log.w(TAG, "Error fetching from source $sourceName: ${e.message}")
                 // Continue to next source
             }
         }
@@ -1283,6 +1277,10 @@ class LyricsRepositoryImpl @Inject constructor(
                 return@withContext Result.success(stored)
             }
 
+            if (!isExternalLyricsEnabled()) {
+                return@withContext Result.failure(LyricsException(context.getString(R.string.lyrics_remote_disabled)))
+            }
+
             // First, try the search API which is more flexible, then pick the best match
             val searchResult = searchRemote(song)
             if (searchResult.isSuccess) {
@@ -1372,6 +1370,10 @@ class LyricsRepositoryImpl @Inject constructor(
 
     override suspend fun searchRemote(song: Song): Result<Pair<String, List<LyricsSearchResult>>> = withContext(Dispatchers.IO) {
         try {
+            if (!isExternalLyricsEnabled()) {
+                return@withContext Result.failure(LyricsException(context.getString(R.string.lyrics_remote_disabled)))
+            }
+
             LogUtils.d(this@LyricsRepositoryImpl, "Searching remote for lyrics for: ${song.title} by ${song.displayArtist}")
 
             val combinedQuery = "${song.title} ${song.displayArtist}"
@@ -1452,6 +1454,10 @@ class LyricsRepositoryImpl @Inject constructor(
 
     override suspend fun searchRemoteByQuery(title: String, artist: String?): Result<Pair<String, List<LyricsSearchResult>>> = withContext(Dispatchers.IO) {
         try {
+            if (!isExternalLyricsEnabled()) {
+                return@withContext Result.failure(LyricsException(context.getString(R.string.lyrics_remote_disabled)))
+            }
+
             val cleanTitle = title.trim()
             val cleanArtist = artist?.trim()?.takeIf { it.isNotBlank() }
             val query = listOfNotNull(
