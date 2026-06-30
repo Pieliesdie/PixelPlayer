@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Reconstruyendo base de datos…</string>
     <string name="settings_auto_scan_lrc_title">Escanear archivos .lrc automáticamente</string>
     <string name="settings_auto_scan_lrc_subtitle">Buscar y asignar automáticamente archivos .lrc en la misma carpeta durante la sincronización de la biblioteca.</string>
+    <string name="settings_online_services_section">Servicios en línea opcionales</string>
+    <string name="settings_external_lyrics_title">Letras en línea de LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">Permitir búsquedas y recuperaciones manuales de lrclib.net cuando faltan letras localmente.</string>
+    <string name="settings_external_artist_images_title">Imágenes de artistas de Deezer</string>
+    <string name="settings_external_artist_images_subtitle">Permitir que las imágenes de artistas faltantes se obtengan de Deezer y se almacenen en caché localmente.</string>
     <string name="settings_lyrics_management_section">Gestión de letras</string>
     <string name="settings_lyrics_source_priority_title">Prioridad de fuente de letras</string>
     <string name="settings_lyrics_source_priority_subtitle">Elige qué fuente probar primero al buscar letras.</string>

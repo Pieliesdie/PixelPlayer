@@ -244,4 +244,6 @@
     <string name="batch_edit_remove_all_art">إزالة جميع أغلفة الألبومات</string>
     <string name="batch_edit_multiple_covers">(أغلفة متعددة مختلفة)</string>
     <string name="player_playback_error">خطأ في التشغيل: %1$s</string>
+    <!-- Remote data toggle messages -->
+    <string name="lyrics_remote_disabled">تم تعطيل كلمات الأغاني عبر الإنترنت في الإعدادات.</string>
 </resources>

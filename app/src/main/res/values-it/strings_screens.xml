@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">Corrisponde all\'impostazione di aspetto attuale del telefono.</string>
     <string name="setup_recommended">Consigliato</string>
     <string name="setup_theme_footer">Puoi cambiarlo in seguito in Impostazioni &gt; Aspetto &gt; Tema app.</string>
+    <string name="setup_external_services_title">Servizi online opzionali</string>
+    <string name="setup_external_services_subtitle">PixelPlayer funziona offline per impostazione predefinita. Abilita solo le ricerche che desideri.</string>
+    <string name="setup_external_lyrics_title">Testi online da LRCLIB</string>
+    <string name="setup_external_lyrics_description">Cerca su lrclib.net quando mancano testi locali o incorporati.</string>
+    <string name="setup_external_artist_images_title">Immagini degli artisti da Deezer</string>
+    <string name="setup_external_artist_images_description">Recupera le foto degli artisti mancanti da Deezer e memorizzale nella cache localmente.</string>
+    <string name="setup_external_services_footer">Puoi cambiarlo in seguito in Impostazioni &gt; Gestione musica &gt; Servizi online opzionali.</string>
     <string name="setup_library_layout_title">Layout libreria</string>
     <string name="setup_library_layout_subtitle">Scegli il tuo modo preferito di navigare nella libreria.</string>
     <string name="setup_preview_songs_label">Brani</string>

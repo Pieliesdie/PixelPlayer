@@ -306,4 +306,9 @@
     <string name="settings_volume_section">مستوى الصوت</string>
     <string name="settings_pause_on_volume_zero">إيقاف مؤقت عند وصول مستوى الصوت إلى الصفر</string>
     <string name="settings_pause_on_volume_zero_desc">إيقاف التشغيل تلقائيًا مؤقتًا عندما يكون مستوى الصوت 0</string>
+    <string name="settings_online_services_section">الخدمات عبر الإنترنت الاختيارية</string>
+    <string name="settings_external_lyrics_title">كلمات الأغاني عبر الإنترنت من LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">السماح بعمليات البحث والجلب اليدوي من lrclib.net عندما تكون كلمات الأغاني مفقودة محليًا.</string>
+    <string name="settings_external_artist_images_title">عمل فني للفنان من Deezer</string>
+    <string name="settings_external_artist_images_subtitle">السماح بجلب صور الفنانين المفقودة من Deezer وتخزينها مؤقتًا محليًا.</string>
 </resources>

@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">正在重建数据库…</string>
     <string name="settings_auto_scan_lrc_title">自动扫描 .lrc 文件</string>
     <string name="settings_auto_scan_lrc_subtitle">在同步媒体库时，自动扫描并分配同一文件夹中的 .lrc 文件。</string>
+    <string name="settings_online_services_section">可选在线服务</string>
+    <string name="settings_external_lyrics_title">来自 LRCLIB 的在线歌词</string>
+    <string name="settings_external_lyrics_subtitle">在本地缺少歌词时，允许从 lrclib.net 搜索和手动获取。</string>
+    <string name="settings_external_artist_images_title">来自 Deezer 的歌手图片</string>
+    <string name="settings_external_artist_images_subtitle">允许从 Deezer 获取缺失的歌手图像并在本地缓存。</string>
     <string name="settings_lyrics_management_section">歌词管理</string>
     <string name="settings_lyrics_source_priority_title">歌词来源优先级</string>
     <string name="settings_lyrics_source_priority_subtitle">选择获取歌词时优先尝试的来源。</string>

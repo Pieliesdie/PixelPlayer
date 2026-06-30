@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">휴대전화의 현재 디자인 설정에 맞춥니다.</string>
     <string name="setup_recommended">권장</string>
     <string name="setup_theme_footer">나중에 설정 &gt; 디자인 &gt; 앱 테마에서 변경할 수 있습니다.</string>
+    <string name="setup_external_services_title">선택적 온라인 서비스</string>
+    <string name="setup_external_services_subtitle">PixelPlayer는 기본적으로 오프라인으로 작동합니다. 원하는 검색만 활성화하세요.</string>
+    <string name="setup_external_lyrics_title">LRCLIB의 온라인 가사</string>
+    <string name="setup_external_lyrics_description">로컬 또는 포함된 가사가 없을 때 lrclib.net을 검색합니다.</string>
+    <string name="setup_external_artist_images_title">Deezer의 아티스트 이미지</string>
+    <string name="setup_external_artist_images_description">Deezer에서 누락된 아티스트 사진을 가져와 로컬에 캐시합니다.</string>
+    <string name="setup_external_services_footer">나중에 설정 &gt; 음악 관리 &gt; 선택적 온라인 서비스에서 변경할 수 있습니다.</string>
     <string name="setup_library_layout_title">라이브러리 레이아웃</string>
     <string name="setup_library_layout_subtitle">선호하는 라이브러리 탐색 방식을 선택하세요.</string>
     <string name="setup_preview_songs_label">곡</string>

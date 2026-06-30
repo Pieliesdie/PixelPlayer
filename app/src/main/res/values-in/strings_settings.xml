@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Membangun kembali database…</string>
     <string name="settings_auto_scan_lrc_title">Pindai otomatis file .lrc</string>
     <string name="settings_auto_scan_lrc_subtitle">Secara otomatis memindai dan menetapkan file .lrc di folder yang sama selama sinkronisasi pustaka.</string>
+    <string name="settings_online_services_section">Layanan online opsional</string>
+    <string name="settings_external_lyrics_title">Lirik online dari LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">Izinkan pencarian dan pengambilan manual dari lrclib.net ketika lirik tidak ada secara lokal.</string>
+    <string name="settings_external_artist_images_title">Gambar artis dari Deezer</string>
+    <string name="settings_external_artist_images_subtitle">Izinkan gambar artis yang hilang untuk diambil dari Deezer dan disimpan dalam cache lokal.</string>
     <string name="settings_lyrics_management_section">Manajemen Lirik</string>
     <string name="settings_lyrics_source_priority_title">Prioritas Sumber Lirik</string>
     <string name="settings_lyrics_source_priority_subtitle">Pilih sumber mana yang akan dicoba terlebih dahulu saat mengambil lirik.</string>

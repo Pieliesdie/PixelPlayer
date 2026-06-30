@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Gjenoppbygger database…</string>
     <string name="settings_auto_scan_lrc_title">Skann .lrc-filer automatisk</string>
     <string name="settings_auto_scan_lrc_subtitle">Skann og tildel .lrc-filer i samme mappe automatisk under synkronisering.</string>
+    <string name="settings_online_services_section">Valgfrie nettjenester</string>
+    <string name="settings_external_lyrics_title">Sangtekster på nettet fra LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">Tillat søk og manuelle henting fra lrclib.net når sangtekster mangler lokalt.</string>
+    <string name="settings_external_artist_images_title">Artistbilder fra Deezer</string>
+    <string name="settings_external_artist_images_subtitle">Tillat at manglende artistbilder hentes fra Deezer og bufres lokalt.</string>
     <string name="settings_lyrics_management_section">Administrasjon av sangtekster</string>
     <string name="settings_lyrics_source_priority_title">Prioritet for sangtekstkilde</string>
     <string name="settings_lyrics_source_priority_subtitle">Velg hvilken kilde som skal prøves først ved henting av sangtekster.</string>

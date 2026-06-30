@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">Telefonunuzun mevcut görünüm ayarıyla eşleştirin.</string>
     <string name="setup_recommended">Önerilen</string>
     <string name="setup_theme_footer">Bunu daha sonra Ayarlar &gt; Görünüm &gt; Uygulama Teması bölümünden değiştirebilirsiniz.</string>
+    <string name="setup_external_services_title">İsteğe Bağlı Çevrimiçi Hizmetler</string>
+    <string name="setup_external_services_subtitle">PixelPlayer varsayılan olarak çevrimdışı çalışır. Sadece istediğiniz aramaları etkinleştirin.</string>
+    <string name="setup_external_lyrics_title">LRCLIB\'den çevrimiçi şarkı sözleri</string>
+    <string name="setup_external_lyrics_description">Yerel veya gömülü şarkı sözleri eksik olduğunda lrclib.net\'te arayın.</string>
+    <string name="setup_external_artist_images_title">Deezer\'dan sanatçı görselleri</string>
+    <string name="setup_external_artist_images_description">Eksik sanatçı fotoğraflarını Deezer\'dan getirin ve yerel olarak önbelleğe alın.</string>
+    <string name="setup_external_services_footer">Bunu daha sonra Ayarlar &gt; Müzik Yönetimi &gt; İsteğe bağlı çevrimiçi hizmetler bölümünden değiştirebilirsiniz.</string>
     <string name="setup_library_layout_title">Kitaplık Düzeni</string>
     <string name="setup_library_layout_subtitle">Kitaplığınızda gezinmek için tercih ettiğiniz yolu seçin.</string>
     <string name="setup_preview_songs_label">Şarkılar</string>

@@ -125,4 +125,6 @@
     <string name="common_play_album">Riproduci album</string>
     <string name="common_shuffle_play_album">Riproduzione casuale album</string>
     <string name="common_album_art_for_title">Copertina album per %1$s</string>
+    <!-- Remote data toggle messages -->
+    <string name="lyrics_remote_disabled">I testi online sono disabilitati nelle impostazioni.</string>
 </resources>

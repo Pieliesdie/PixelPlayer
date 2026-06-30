@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">匹配您手机当前的外观设置。</string>
     <string name="setup_recommended">推荐</string>
     <string name="setup_theme_footer">您稍后可以在“设置 &gt; 外观 &gt; 应用主题”中更改此设置。</string>
+    <string name="setup_external_services_title">可选在线服务</string>
+    <string name="setup_external_services_subtitle">PixelPlayer 默认离线工作。只启用您需要的查询。</string>
+    <string name="setup_external_lyrics_title">来自 LRCLIB 的在线歌词</string>
+    <string name="setup_external_lyrics_description">缺少本地或内嵌歌词时搜索 lrclib.net。</string>
+    <string name="setup_external_artist_images_title">来自 Deezer 的歌手图片</string>
+    <string name="setup_external_artist_images_description">从 Deezer 获取缺失的歌手照片并进行本地缓存。</string>
+    <string name="setup_external_services_footer">您稍后可以在设置 &gt; 音乐管理 &gt; 可选在线服务中进行更改。</string>
     <string name="setup_library_layout_title">媒体库布局</string>
     <string name="setup_library_layout_subtitle">选择您首选的媒体库导航方式。</string>
     <string name="setup_preview_songs_label">歌曲</string>

@@ -125,4 +125,6 @@
     <string name="common_play_album">Album abspielen</string>
     <string name="common_shuffle_play_album">Album zufällig abspielen</string>
     <string name="common_album_art_for_title">Cover für %1$s</string>
+    <!-- Remote data toggle messages -->
+    <string name="lyrics_remote_disabled">Online-Songtexte sind in den Einstellungen deaktiviert.</string>
 </resources>

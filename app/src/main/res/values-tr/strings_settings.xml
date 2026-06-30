@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Veri tabanı yeniden oluşturuluyor…</string>
     <string name="settings_auto_scan_lrc_title">.lrc dosyalarını otomatik tara</string>
     <string name="settings_auto_scan_lrc_subtitle">Kitaplık senkronizasyonu sırasında aynı klasördeki .lrc dosyalarını otomatik olarak tara ve ata.</string>
+    <string name="settings_online_services_section">İsteğe bağlı çevrimiçi hizmetler</string>
+    <string name="settings_external_lyrics_title">LRCLIB\'den çevrimiçi şarkı sözleri</string>
+    <string name="settings_external_lyrics_subtitle">Şarkı sözleri yerel olarak bulunmadığında lrclib.net\'ten aramaya ve manuel olarak getirmeye izin ver.</string>
+    <string name="settings_external_artist_images_title">Deezer\'dan sanatçı görselleri</string>
+    <string name="settings_external_artist_images_subtitle">Eksik sanatçı görsellerinin Deezer\'dan getirilmesine ve yerel olarak önbelleğe alınmasına izin ver.</string>
     <string name="settings_lyrics_management_section">Şarkı Sözü Yönetimi</string>
     <string name="settings_lyrics_source_priority_title">Şarkı Sözü Kaynak Önceliği</string>
     <string name="settings_lyrics_source_priority_subtitle">Şarkı sözleri alınırken ilk olarak hangi kaynağın deneneceğini seçin.</string>

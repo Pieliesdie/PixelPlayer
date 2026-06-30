@@ -50,6 +50,13 @@
     <string name="setup_theme_subtitle">اختر المظهر الذي تريده قبل البدء في استكشاف مكتبتك.</string>
     <string name="setup_theme_footer">يمكنك تغيير هذا لاحقاً من الإعدادات &gt; المظهر &gt; مظهر التطبيق.</string>
     <string name="setup_recommended">موصى به</string>
+    <string name="setup_external_services_title">الخدمات عبر الإنترنت الاختيارية</string>
+    <string name="setup_external_services_subtitle">يعمل PixelPlayer دون اتصال بالإنترنت افتراضيًا. قم بتمكين عمليات البحث التي تريدها فقط.</string>
+    <string name="setup_external_lyrics_title">كلمات الأغاني عبر الإنترنت من LRCLIB</string>
+    <string name="setup_external_lyrics_description">ابحث في lrclib.net عندما تكون كلمات الأغاني المحلية أو المضمنة مفقودة.</string>
+    <string name="setup_external_artist_images_title">عمل فني للفنان من Deezer</string>
+    <string name="setup_external_artist_images_description">جلب صور الفنانين المفقودة من Deezer وتخزينها مؤقتًا محليًا.</string>
+    <string name="setup_external_services_footer">يمكنك تغيير هذا لاحقًا في الإعدادات &gt; إدارة الموسيقى &gt; الخدمات عبر الإنترنت الاختيارية.</string>
     <string name="setup_library_layout_title">تخطيط المكتبة</string>
     <string name="setup_library_layout_subtitle">اختر الطريقة المفضلّة لديك للتنقل في مكتبتك.</string>
     <string name="setup_compact_mode">الوضع المدمج</string>

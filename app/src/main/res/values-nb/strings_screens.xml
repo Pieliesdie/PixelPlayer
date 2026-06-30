@@ -48,6 +48,13 @@
     <string name="setup_theme_follow_description">Bruk telefonens gjeldende innstilling.</string>
     <string name="setup_recommended">Anbefalt</string>
     <string name="setup_theme_footer">Du kan endre dette senere i innstillinger.</string>
+    <string name="setup_external_services_title">Valgfrie nettjenester</string>
+    <string name="setup_external_services_subtitle">PixelPlayer fungerer frakoblet som standard. Aktiver bare søkene du ønsker.</string>
+    <string name="setup_external_lyrics_title">Sangtekster på nettet fra LRCLIB</string>
+    <string name="setup_external_lyrics_description">Søk på lrclib.net når lokale eller innebygde sangtekster mangler.</string>
+    <string name="setup_external_artist_images_title">Artistbilder fra Deezer</string>
+    <string name="setup_external_artist_images_description">Hent manglende artistbilder fra Deezer og buf dem lokalt.</string>
+    <string name="setup_external_services_footer">Du kan endre dette senere i Innstillinger &gt; Musikkadministrasjon &gt; Valgfrie nettjenester.</string>
     <string name="setup_library_layout_title">Bibliotekslayout</string>
     <string name="setup_library_layout_subtitle">Velg hvordan du vil navigere i biblioteket.</string>
     <string name="setup_preview_songs_label">Sanger</string>

@@ -125,4 +125,6 @@
     <string name="common_play_album">Spill album</string>
     <string name="common_shuffle_play_album">Bland album</string>
     <string name="common_album_art_for_title">Albumkunst for %1$s</string>
+    <!-- Remote data toggle messages -->
+    <string name="lyrics_remote_disabled">Sangtekster på nettet er deaktivert i innstillingene.</string>
 </resources>

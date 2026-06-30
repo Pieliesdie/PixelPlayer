@@ -59,6 +59,11 @@
     <string name="settings_toast_rebuilding_database">Datenbank wird neu aufgebaut…</string>
     <string name="settings_auto_scan_lrc_title">.lrc-Dateien automatisch scannen</string>
     <string name="settings_auto_scan_lrc_subtitle">.lrc-Dateien im selben Ordner werden beim Sync automatisch erkannt und zugewiesen.</string>
+    <string name="settings_online_services_section">Optionale Online-Dienste</string>
+    <string name="settings_external_lyrics_title">Online-Songtexte von LRCLIB</string>
+    <string name="settings_external_lyrics_subtitle">Suchanfragen und manuelle Abrufe von lrclib.net zulassen, wenn Songtexte lokal fehlen.</string>
+    <string name="settings_external_artist_images_title">Künstlerbilder von Deezer</string>
+    <string name="settings_external_artist_images_subtitle">Zulassen, dass fehlende Künstlerbilder von Deezer abgerufen und lokal zwischengespeichert werden.</string>
     <string name="settings_lyrics_management_section">Lyrics</string>
     <string name="settings_lyrics_source_priority_title">Lyrics-Quell-Priorität</string>
     <string name="settings_lyrics_source_priority_subtitle">Legt fest, welche Quelle beim Laden von Lyrics zuerst versucht wird.</string>

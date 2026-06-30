@@ -125,4 +125,6 @@
     <string name="common_play_album">Lire l\'album</string>
     <string name="common_shuffle_play_album">Lire l\'album en aléatoire</string>
     <string name="common_album_art_for_title">Pochette d\'album pour %1$s</string>
+    <!-- Remote data toggle messages -->
+    <string name="lyrics_remote_disabled">Les paroles en ligne sont désactivées dans les paramètres.</string>
 </resources>
