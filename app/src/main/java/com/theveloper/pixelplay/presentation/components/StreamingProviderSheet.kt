@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowRight
+import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -56,8 +56,8 @@ fun StreamingProviderSheet(
     )
 ) {
     val context = LocalContext.current
-    val providerSegmentContainerShape = RoundedCornerShape(20.dp)
-    val providerSegmentItemShape = RoundedCornerShape(8.dp)
+    val providerSegmentContainerShape = RoundedCornerShape(24.dp)
+    val providerSegmentItemShape = RoundedCornerShape(16.dp)
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -96,15 +96,14 @@ fun StreamingProviderSheet(
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = providerSegmentContainerShape,
-                color = Color.Transparent,
-                tonalElevation = 0.dp
+                color = MaterialTheme.colorScheme.surfaceContainer,
+                tonalElevation = 2.dp
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(4.dp)
-                        .clip(providerSegmentContainerShape),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     ProviderRow(
                         iconPainter = painterResource(R.drawable.telegram),
@@ -233,27 +232,27 @@ private fun ProviderRow(
 ) {
     val containerColor = when {
         !enabled -> MaterialTheme.colorScheme.surfaceContainerLowest
-        isConnected -> MaterialTheme.colorScheme.surfaceContainerHighest
-        else -> MaterialTheme.colorScheme.surfaceContainerHigh
+        isConnected -> MaterialTheme.colorScheme.primaryContainer
+        else -> MaterialTheme.colorScheme.surfaceContainerHighest
     }
     val titleColor = if (enabled) {
         MaterialTheme.colorScheme.onSurface
     } else {
-        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.82f)
+        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.78f)
     }
     val subtitleColor = when {
-        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+        !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f)
         isConnected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant
     }
-    val arrowContainerColor = when {
+    val actionContainerColor = when {
         !enabled -> MaterialTheme.colorScheme.surfaceContainerHighest
-        isConnected -> MaterialTheme.colorScheme.primaryContainer
+        isConnected -> MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
         else -> MaterialTheme.colorScheme.surfaceBright
     }
-    val arrowTint = when {
+    val actionTint = when {
         !enabled -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
-        isConnected -> MaterialTheme.colorScheme.onPrimaryContainer
+        isConnected -> MaterialTheme.colorScheme.primary
         else -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
     }
     val iconTileShape = RoundedCornerShape(14.dp)
@@ -261,11 +260,12 @@ private fun ProviderRow(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .alpha(if (enabled) 1f else 0.62f)
+            .alpha(if (enabled) 1f else 0.55f)
             .clip(shape)
             .clickable(enabled = enabled, onClick = onClick),
         shape = shape,
-        color = containerColor
+        color = containerColor,
+        shadowElevation = if (enabled) 1.5.dp else 0.dp
     ) {
         ListItem(
             colors = ListItemDefaults.colors(containerColor = Color.Transparent),
@@ -293,22 +293,22 @@ private fun ProviderRow(
             leadingContent = {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
+                        .size(44.dp)
                         .clip(iconTileShape)
-                        .background(iconTint.copy(alpha = if (enabled) 0.14f else 0.1f)),
+                        .background(iconTint.copy(alpha = if (enabled) 0.18f else 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     if (useImage) {
                         androidx.compose.foundation.Image(
                             painter = iconPainter,
                             contentDescription = null,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(24.dp)
                         )
                     } else {
                         Icon(
                             painter = iconPainter,
                             contentDescription = null,
-                            modifier = Modifier.size(22.dp),
+                            modifier = Modifier.size(24.dp),
                             tint = iconTint
                         )
                     }
@@ -317,15 +317,15 @@ private fun ProviderRow(
             trailingContent = {
                 Surface(
                     shape = CircleShape,
-                    color = arrowContainerColor
+                    color = actionContainerColor
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.KeyboardArrowRight,
+                        imageVector = if (isConnected) Icons.Rounded.Check else Icons.AutoMirrored.Rounded.KeyboardArrowRight,
                         contentDescription = null,
                         modifier = Modifier
                             .padding(horizontal = 6.dp, vertical = 6.dp)
                             .size(26.dp),
-                        tint = arrowTint
+                        tint = actionTint
                     )
                 }
             }
